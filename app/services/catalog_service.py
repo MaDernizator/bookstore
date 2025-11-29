@@ -15,6 +15,12 @@ def list_books(
     q: Optional[str] = None,
     genre_id: Optional[int] = None,
     author_id: Optional[int] = None,
+    publisher_id: Optional[int] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    min_year: Optional[int] = None,
+    max_year: Optional[int] = None,
+    order_by: Optional[str] = None,
 ) -> List[Book]:
     repo = BookRepository(db)
     return repo.list_books(
@@ -23,7 +29,14 @@ def list_books(
         q=q,
         genre_id=genre_id,
         author_id=author_id,
+        publisher_id=publisher_id,
+        min_price=min_price,
+        max_price=max_price,
+        min_year=min_year,
+        max_year=max_year,
+        order_by=order_by,
     )
+
 
 
 def get_book(db: Session, book_id: int) -> Optional[Book]:

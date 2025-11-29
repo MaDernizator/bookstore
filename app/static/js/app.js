@@ -84,13 +84,64 @@ async function initIndexPage() {
 
     const searchInput = document.getElementById("search-input");
     const searchBtn = document.getElementById("search-btn");
+    const resetBtn = document.getElementById("search-reset-btn");
 
-    async function loadBooks(query) {
-        listEl.innerHTML = "Загрузка...";
+    const genreSelect = document.getElementById("filter-genre");
+    const authorSelect = document.getElementById("filter-author");
+    const minPriceInput = document.getElementById("filter-min-price");
+    const maxPriceInput = document.getElementById("filter-max-price");
+    const minYearInput = document.getElementById("filter-min-year");
+    const maxYearInput = document.getElementById("filter-max-year");
+    const orderSelect = document.getElementById("filter-order");
+
+    async function loadFilters() {
         try {
-            const params = new URLSearchParams();
-            if (query) params.append("q", query);
-            const books = await apiFetch(`/books?${params.toString()}`);
+            const [genres, authors] = await Promise.all([
+                apiFetch("/dicts/genres"),
+                apiFetch("/dicts/authors"),
+            ]);
+
+            genres.forEach((g) => {
+                const opt = document.createElement("option");
+                opt.value = g.genre_id;
+                opt.textContent = g.name;
+                genreSelect.appendChild(opt);
+            });
+
+            authors.forEach((a) => {
+                const opt = document.createElement("option");
+                opt.value = a.author_id;
+                opt.textContent = a.full_name;
+                authorSelect.appendChild(opt);
+            });
+        } catch (e) {
+            console.error("Ошибка загрузки фильтров:", e);
+        }
+    }
+
+    async function loadBooks() {
+        listEl.innerHTML = "Загрузка...";
+
+        const params = new URLSearchParams();
+
+        const q = searchInput.value.trim();
+        if (q) params.append("q", q);
+
+        if (genreSelect.value) params.append("genre_id", genreSelect.value);
+        if (authorSelect.value) params.append("author_id", authorSelect.value);
+
+        if (minPriceInput.value) params.append("min_price", minPriceInput.value);
+        if (maxPriceInput.value) params.append("max_price", maxPriceInput.value);
+
+        if (minYearInput.value) params.append("min_year", minYearInput.value);
+        if (maxYearInput.value) params.append("max_year", maxYearInput.value);
+
+        if (orderSelect.value) params.append("order_by", orderSelect.value);
+
+        try {
+            const query = params.toString();
+            const books = await apiFetch(`/books${query ? "?" + query : ""}`);
+
             if (!books.length) {
                 listEl.innerHTML = "<p>Книг не найдено</p>";
                 return;
@@ -103,6 +154,7 @@ async function initIndexPage() {
                 card.innerHTML = `
                     <h2>${b.title}</h2>
                     <p>Цена: ${b.price} ₽</p>
+                    <p>Год: ${b.publication_year || "-"}</p>
                     <a href="/books/${b.book_id}">Подробнее</a>
                 `;
                 listEl.appendChild(card);
@@ -113,11 +165,33 @@ async function initIndexPage() {
     }
 
     searchBtn.addEventListener("click", () => {
-        loadBooks(searchInput.value.trim());
+        loadBooks();
     });
 
+    resetBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        genreSelect.value = "";
+        authorSelect.value = "";
+        minPriceInput.value = "";
+        maxPriceInput.value = "";
+        minYearInput.value = "";
+        maxYearInput.value = "";
+        orderSelect.value = "";
+        loadBooks();
+    });
+
+    // По Enter в строке поиска
+    searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            loadBooks();
+        }
+    });
+
+    await loadFilters();
     await loadBooks();
 }
+
 
 // --- Страница книги ---
 

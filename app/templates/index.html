@@ -4,8 +4,63 @@
 <h1>Каталог книг</h1>
 
 <div class="search">
-    <input type="text" id="search-input" placeholder="Поиск по названию">
-    <button id="search-btn">Искать</button>
+    <div class="search__row">
+        <input type="text" id="search-input" placeholder="Поиск по названию">
+        <button id="search-btn">Искать</button>
+    </div>
+
+    <div class="search__row">
+        <label>
+            Жанр:
+            <select id="filter-genre">
+                <option value="">Все</option>
+            </select>
+        </label>
+
+        <label>
+            Автор:
+            <select id="filter-author">
+                <option value="">Все</option>
+            </select>
+        </label>
+
+        <label>
+            Цена от:
+            <input type="number" id="filter-min-price" min="0">
+        </label>
+
+        <label>
+            до:
+            <input type="number" id="filter-max-price" min="0">
+        </label>
+    </div>
+
+    <div class="search__row">
+        <label>
+            Год от:
+            <input type="number" id="filter-min-year">
+        </label>
+
+        <label>
+            до:
+            <input type="number" id="filter-max-year">
+        </label>
+
+        <label>
+            Сортировка:
+            <select id="filter-order">
+                <option value="">По умолчанию</option>
+                <option value="price_asc">Цена по возрастанию</option>
+                <option value="price_desc">Цена по убыванию</option>
+                <option value="year_desc">Сначала новые</option>
+                <option value="year_asc">Сначала старые</option>
+                <option value="title_asc">Название A→Я</option>
+                <option value="title_desc">Название Я→A</option>
+            </select>
+        </label>
+
+        <button id="search-reset-btn">Сбросить</button>
+    </div>
 </div>
 
 <div id="books-list" class="cards"></div>

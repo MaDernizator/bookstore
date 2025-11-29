@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from app.models import User
 from app.services.auth_service import create_access_token
 
-
 def get_admin_token(db: Session):
     # ищем первого админа
     admin: User | None = (
@@ -55,3 +54,48 @@ def test_admin_create_and_list_books(client: TestClient, db_session, create_user
     assert resp.status_code == 200
     book2 = resp.json()
     assert book2["book_id"] == book_id
+
+def test_books_filters_and_sorting(client: TestClient, db_session, create_user):
+    # админ
+    admin = create_user("adminfilter@example.com", "adminpass", is_admin=True)
+    admin_token = create_access_token({"sub": admin.email})
+
+    # создаём несколько книг с уникальным префиксом в названии
+    def create_book(title, price, year):
+        resp = client.post(
+            "/api/books/",
+            json={
+                "title": title,
+                "description": "",
+                "price": price,
+                "publication_year": year,
+                "pages": 100,
+                "isbn": None,
+                "genre_id": None,
+                "publisher_id": None,
+                "author_ids": [],
+            },
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert resp.status_code == 201
+
+    create_book("Filt Cheap Book", 100, 2020)
+    create_book("Filt Middle Book", 300, 2022)
+    create_book("Filt Expensive Book", 500, 2024)
+
+    # фильтр по min_price — смотрим только наши книги с префиксом "Filt"
+    resp = client.get("/api/books?min_price=200&q=Filt")
+    assert resp.status_code == 200
+    books = resp.json()
+    titles = {b["title"] for b in books}
+    assert "Filt Cheap Book" not in titles
+    assert "Filt Middle Book" in titles
+    assert "Filt Expensive Book" in titles
+
+    # сортировка по цене по убыванию — тоже только по нашим ("q=Filt")
+    resp = client.get("/api/books?order_by=price_desc&q=Filt")
+    assert resp.status_code == 200
+    books = resp.json()
+    # теперь первое и последнее — именно наши, без влияния других тестов
+    assert books[0]["title"] == "Filt Expensive Book"
+    assert books[-1]["title"] == "Filt Cheap Book"

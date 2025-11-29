@@ -66,7 +66,31 @@ body {
 }
 
 .search {
-    margin: 12px 0;
+    margin: 12px 0 20px;
+    background: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.search__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+}
+
+.search__row label {
+    font-size: 14px;
+}
+
+.search__row input,
+.search__row select {
+    padding: 4px 6px;
+    font-size: 14px;
 }
 
 .form {

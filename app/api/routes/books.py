@@ -3,10 +3,12 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-
+from decimal import Decimal
 from app.api.deps import get_db_session, get_current_admin
 from app.schemas.book import BookCreate, BookRead, BookUpdate
 from app.services import catalog_service
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -16,6 +18,18 @@ def list_books(
     q: Optional[str] = Query(None, description="Поиск по названию"),
     genre_id: Optional[int] = Query(None),
     author_id: Optional[int] = Query(None),
+    publisher_id: Optional[int] = Query(None),
+    min_price: Optional[Decimal] = Query(None),
+    max_price: Optional[Decimal] = Query(None),
+    min_year: Optional[int] = Query(None),
+    max_year: Optional[int] = Query(None),
+    order_by: Optional[str] = Query(
+        None,
+        description=(
+            "Сортировка: price_asc, price_desc, "
+            "year_asc, year_desc, title_asc, title_desc"
+        ),
+    ),
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db_session),
@@ -27,6 +41,12 @@ def list_books(
         q=q,
         genre_id=genre_id,
         author_id=author_id,
+        publisher_id=publisher_id,
+        min_price=float(min_price) if min_price is not None else None,
+        max_price=float(max_price) if max_price is not None else None,
+        min_year=min_year,
+        max_year=max_year,
+        order_by=order_by,
     )
     return books
 
