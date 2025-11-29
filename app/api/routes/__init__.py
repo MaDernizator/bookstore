@@ -1,4 +1,3 @@
-# app/api/routes/__init__.py
-from . import auth  # чтобы можно было импортировать в router.py
+from . import auth, books, cart, orders
 
-__all__ = ["auth", "books"]
+__all__ = ["auth", "books", "cart", "orders"]
