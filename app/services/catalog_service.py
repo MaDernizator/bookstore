@@ -34,7 +34,7 @@ def get_book(db: Session, book_id: int) -> Optional[Book]:
 def create_book(db: Session, book_in: BookCreate) -> Book:
     repo = BookRepository(db)
     # сначала создаём книгу без авторов
-    data = book_in.dict(exclude={"author_ids"})
+    data = book_in.model_dump(exclude={"author_ids"})
     book = repo.create_book(data)
 
     # привязываем авторов, если есть

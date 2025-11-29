@@ -2,7 +2,7 @@
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict  # добавили ConfigDict
 
 
 class BookBase(BaseModel):
@@ -36,5 +36,4 @@ class BookUpdate(BaseModel):
 class BookRead(BookBase):
     book_id: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

@@ -1,6 +1,6 @@
 # app/schemas/user.py
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict  # добавили ConfigDict
 
 
 class UserBase(BaseModel):
@@ -17,5 +17,4 @@ class UserRead(UserBase):
     user_id: int
     is_admin: bool
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

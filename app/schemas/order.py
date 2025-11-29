@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class OrderItemRead(BaseModel):
@@ -12,8 +12,7 @@ class OrderItemRead(BaseModel):
     quantity: int
     price: Decimal
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrderRead(BaseModel):
@@ -24,5 +23,4 @@ class OrderRead(BaseModel):
     status: str
     items: List[OrderItemRead] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

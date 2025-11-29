@@ -1,6 +1,6 @@
 # app/schemas/cart.py
 from typing import List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class CartItemBase(BaseModel):
@@ -21,13 +21,11 @@ class CartItemRead(BaseModel):
     book_id: int
     quantity: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CartRead(BaseModel):
     cart_id: int
     items: List[CartItemRead] = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
