@@ -15,6 +15,7 @@ class BookBase(BaseModel):
     genre_id: Optional[int] = None
     publisher_id: Optional[int] = None
     author_ids: List[int] = []  # список id авторов
+    cover_image: Optional[str] = None  # URL/путь к обложке
 
 
 class BookCreate(BookBase):
@@ -31,6 +32,7 @@ class BookUpdate(BaseModel):
     genre_id: Optional[int] = None
     publisher_id: Optional[int] = None
     author_ids: Optional[List[int]] = None
+    cover_image: Optional[str] = None  # на случай ручного обновления
 
 
 class BookRead(BookBase):

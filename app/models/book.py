@@ -15,6 +15,8 @@ class Book(Base):
     pages = Column(Integer, nullable=True)
     isbn = Column(String(50), unique=True, nullable=True)
 
+    cover_image = Column(String, nullable=True)
+
     genre_id = Column(Integer, ForeignKey("genres.genre_id"), nullable=True)
     publisher_id = Column(Integer, ForeignKey("publishers.publisher_id"), nullable=True)
 

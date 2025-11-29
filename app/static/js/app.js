@@ -151,11 +151,19 @@ async function initIndexPage() {
             books.forEach((b) => {
                 const card = document.createElement("div");
                 card.className = "card";
+
+                const cover = b.cover_image
+                    ? `<div class="card__cover"><img src="${b.cover_image}" alt="Обложка"></div>`
+                    : `<div class="card__cover card__cover_placeholder">Нет обложки</div>`;
+
                 card.innerHTML = `
-                    <h2>${b.title}</h2>
-                    <p>Цена: ${b.price} ₽</p>
-                    <p>Год: ${b.publication_year || "-"}</p>
-                    <a href="/books/${b.book_id}">Подробнее</a>
+                    ${cover}
+                    <div class="card__body">
+                        <h2>${b.title}</h2>
+                        <p>Цена: ${b.price} ₽</p>
+                        <p>Год: ${b.publication_year || "-"}</p>
+                        <a href="/books/${b.book_id}">Подробнее</a>
+                    </div>
                 `;
                 listEl.appendChild(card);
             });
@@ -192,7 +200,6 @@ async function initIndexPage() {
     await loadBooks();
 }
 
-
 // --- Страница книги ---
 
 async function initBookDetailPage() {
@@ -205,12 +212,21 @@ async function initBookDetailPage() {
 
     try {
         const book = await apiFetch(`/books/${bookId}`);
+        const cover = book.cover_image
+            ? `<div class="book-detail__cover"><img src="${book.cover_image}" alt="Обложка"></div>`
+            : `<div class="book-detail__cover book-detail__cover_placeholder">Нет обложки</div>`;
+
         contentEl.innerHTML = `
-            <h2>${book.title}</h2>
-            <p>${book.description || ""}</p>
-            <p>Цена: ${book.price} ₽</p>
-            <p>Год: ${book.publication_year || "-"}</p>
-            <p>Страниц: ${book.pages || "-"}</p>
+            <div class="book-detail__layout">
+                ${cover}
+                <div class="book-detail__info">
+                    <h2>${book.title}</h2>
+                    <p>${book.description || ""}</p>
+                    <p><strong>Цена:</strong> ${book.price} ₽</p>
+                    <p><strong>Год:</strong> ${book.publication_year || "-"}</p>
+                    <p><strong>Страниц:</strong> ${book.pages || "-"}</p>
+                </div>
+            </div>
         `;
     } catch (e) {
         contentEl.innerHTML = `<p class="message message_error">${e.message}</p>`;
@@ -395,7 +411,6 @@ function initRegisterPage() {
                 method: "POST",
                 body: JSON.stringify(payload),
             });
-            // после успешной регистрации отправляем на страницу входа
             window.location.href = "/login";
         } catch (e) {
             errorEl.textContent = e.message;
@@ -403,6 +418,7 @@ function initRegisterPage() {
     });
 }
 
+// --- Админ-панель ---
 
 function initAdminPage() {
     const root = document.getElementById("admin-root");
@@ -444,29 +460,83 @@ function initAdminPage() {
             }
             let html = `<table class="table">
                 <thead>
-                    <tr><th>ID</th><th>Название</th><th>Цена</th><th></th></tr>
+                    <tr>
+                        <th>ID</th>
+                        <th>Обложка</th>
+                        <th>Название</th>
+                        <th>Цена</th>
+                        <th>Обложка (загрузка)</th>
+                        <th></th>
+                    </tr>
                 </thead>
                 <tbody>
             `;
             books.forEach((b) => {
+                const cover = b.cover_image
+                    ? `<img src="${b.cover_image}" alt="Обложка" style="max-width:60px; max-height:80px;">`
+                    : `<span class="small-muted">нет</span>`;
                 html += `
-                    <tr>
+                    <tr data-book-id="${b.book_id}">
                         <td>${b.book_id}</td>
+                        <td>${cover}</td>
                         <td>${b.title}</td>
                         <td>${b.price} ₽</td>
-                        <td><button data-book-id="${b.book_id}" class="admin-book-delete">Удалить</button></td>
+                        <td>
+                            <input type="file" class="admin-cover-file" accept="image/*">
+                            <button class="admin-cover-upload">Загрузить</button>
+                        </td>
+                        <td>
+                            <button data-book-id="${b.book_id}" class="admin-book-delete">Удалить</button>
+                        </td>
                     </tr>
                 `;
             });
             html += "</tbody></table>";
             el.innerHTML = html;
 
+            // удаление книг
             el.querySelectorAll(".admin-book-delete").forEach((btn) => {
                 btn.addEventListener("click", async (e) => {
                     const id = e.target.getAttribute("data-book-id");
                     if (!confirm(`Удалить книгу #${id}?`)) return;
                     try {
                         await apiFetch(`/books/${id}`, { method: "DELETE" });
+                        await loadBooks();
+                    } catch (err) {
+                        alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+
+            // загрузка обложки
+            el.querySelectorAll(".admin-cover-upload").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const tr = e.target.closest("tr");
+                    const id = tr.getAttribute("data-book-id");
+                    const fileInput = tr.querySelector(".admin-cover-file");
+                    if (!fileInput.files || !fileInput.files[0]) {
+                        alert("Выберите файл");
+                        return;
+                    }
+                    const formData = new FormData();
+                    formData.append("file", fileInput.files[0]);
+
+                    try {
+                        await fetch(`/api/admin/books/${id}/cover`, {
+                            method: "POST",
+                            headers: {
+                                "Authorization": getToken() ? `Bearer ${getToken()}` : "",
+                            },
+                            body: formData,
+                        }).then(async (resp) => {
+                            if (!resp.ok) {
+                                const data = await resp.json().catch(() => ({}));
+                                throw new Error(data.detail || "Ошибка загрузки обложки");
+                            }
+                            return resp.json();
+                        });
+
+                        alert("Обложка загружена");
                         await loadBooks();
                     } catch (err) {
                         alert("Ошибка: " + err.message);
@@ -605,43 +675,69 @@ function initAdminPage() {
     });
 
     // Создание книги
-    const createForm = document.getElementById("admin-book-create-form");
-    const createMsg = document.getElementById("admin-book-create-msg");
-    createForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        createMsg.textContent = "";
-        const fd = new FormData(createForm);
-        const payload = {
-            title: fd.get("title"),
-            price: Number(fd.get("price")),
-            publication_year: fd.get("publication_year")
-                ? Number(fd.get("publication_year"))
-                : null,
-            pages: fd.get("pages") ? Number(fd.get("pages")) : null,
-            description: null,
-            isbn: null,
-            genre_id: null,
-            publisher_id: null,
-            author_ids: [],
-        };
-        try {
-            await apiFetch("/books", {
+const createForm = document.getElementById("admin-book-create-form");
+const createMsg = document.getElementById("admin-book-create-msg");
+createForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    createMsg.textContent = "";
+    createMsg.classList.remove("message_error");
+
+    const fd = new FormData(createForm);
+    const coverFile = fd.get("cover");
+
+    const payload = {
+        title: fd.get("title"),
+        price: Number(fd.get("price")),
+        publication_year: fd.get("publication_year")
+            ? Number(fd.get("publication_year"))
+            : null,
+        pages: fd.get("pages") ? Number(fd.get("pages")) : null,
+        description: null,
+        isbn: null,
+        genre_id: null,
+        publisher_id: null,
+        author_ids: [],
+    };
+
+    try {
+        // 1. создаём книгу
+        const book = await apiFetch("/books", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+
+        // 2. если выбрана обложка — сразу загружаем её
+        if (coverFile && coverFile instanceof File && coverFile.size > 0) {
+            const formData = new FormData();
+            formData.append("file", coverFile);
+
+            await fetch(`/api/admin/books/${book.book_id}/cover`, {
                 method: "POST",
-                body: JSON.stringify(payload),
+                headers: {
+                    "Authorization": getToken() ? `Bearer ${getToken()}` : "",
+                },
+                body: formData,
+            }).then(async (resp) => {
+                if (!resp.ok) {
+                    const data = await resp.json().catch(() => ({}));
+                    throw new Error(data.detail || "Ошибка загрузки обложки");
+                }
+                return resp.json();
             });
-            createMsg.textContent = "Книга создана";
-            createForm.reset();
-            await loadBooks();
-        } catch (err) {
-            createMsg.textContent = err.message;
-            createMsg.classList.add("message_error");
         }
-    });
+
+        createMsg.textContent = "Книга создана";
+        createForm.reset();
+        await loadBooks();
+    } catch (err) {
+        createMsg.textContent = err.message;
+        createMsg.classList.add("message_error");
+    }
+});
 
     (async () => {
         const ok = await ensureAdmin();
         if (!ok) return;
-        // по умолчанию показываем книги
         switchSection("books");
         await loadBooks();
     })();
