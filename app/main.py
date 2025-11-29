@@ -49,4 +49,9 @@ def register_page(request: Request):
     return templates.TemplateResponse("auth/register.html", {"request": request})
 
 
+@app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
+def admin_page(request: Request):
+    return templates.TemplateResponse("admin/index.html", {"request": request})
+
+
 app.include_router(api_router, prefix="/api")

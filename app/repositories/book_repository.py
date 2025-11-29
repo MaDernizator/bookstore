@@ -15,12 +15,12 @@ class BookRepository(BaseRepository[Book]):
         return self.get(book_id)
 
     def list_books(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        q: Optional[str] = None,
-        genre_id: Optional[int] = None,
-        author_id: Optional[int] = None,
+            self,
+            skip: int = 0,
+            limit: int = 100,
+            q: Optional[str] = None,
+            genre_id: Optional[int] = None,
+            author_id: Optional[int] = None,
     ) -> List[Book]:
         query = self.db.query(Book)
 

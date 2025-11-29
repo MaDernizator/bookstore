@@ -329,6 +329,250 @@ function initRegisterPage() {
     });
 }
 
+
+function initAdminPage() {
+    const root = document.getElementById("admin-root");
+    if (!root) return;
+
+    const checkMsg = document.getElementById("admin-check-msg");
+    const content = document.getElementById("admin-content");
+
+    async function ensureAdmin() {
+        try {
+            const me = await apiFetch("/auth/me");
+            if (!me.is_admin) {
+                checkMsg.textContent = "У вас нет прав администратора";
+                return false;
+            }
+            checkMsg.style.display = "none";
+            content.style.display = "block";
+            return true;
+        } catch (e) {
+            checkMsg.textContent = "Необходимо войти как администратор";
+            return false;
+        }
+    }
+
+    function switchSection(name) {
+        document.querySelectorAll(".admin-section").forEach((sec) => {
+            sec.style.display = sec.id === "admin-section-" + name ? "block" : "none";
+        });
+    }
+
+    async function loadBooks() {
+        const el = document.getElementById("admin-books-list");
+        el.innerHTML = "Загрузка...";
+        try {
+            const books = await apiFetch("/books");
+            if (!books.length) {
+                el.innerHTML = "<p>Книг пока нет</p>";
+                return;
+            }
+            let html = `<table class="table">
+                <thead>
+                    <tr><th>ID</th><th>Название</th><th>Цена</th><th></th></tr>
+                </thead>
+                <tbody>
+            `;
+            books.forEach((b) => {
+                html += `
+                    <tr>
+                        <td>${b.book_id}</td>
+                        <td>${b.title}</td>
+                        <td>${b.price} ₽</td>
+                        <td><button data-book-id="${b.book_id}" class="admin-book-delete">Удалить</button></td>
+                    </tr>
+                `;
+            });
+            html += "</tbody></table>";
+            el.innerHTML = html;
+
+            el.querySelectorAll(".admin-book-delete").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const id = e.target.getAttribute("data-book-id");
+                    if (!confirm(`Удалить книгу #${id}?`)) return;
+                    try {
+                        await apiFetch(`/books/${id}`, { method: "DELETE" });
+                        await loadBooks();
+                    } catch (err) {
+                        alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+        } catch (e) {
+            el.innerHTML = `<p class="message message_error">${e.message}</p>`;
+        }
+    }
+
+    async function loadOrders() {
+        const el = document.getElementById("admin-orders-list");
+        el.innerHTML = "Загрузка...";
+        try {
+            const orders = await apiFetch("/admin/orders");
+            if (!orders.length) {
+                el.innerHTML = "<p>Заказов пока нет</p>";
+                return;
+            }
+
+            let html = `<table class="table">
+                <thead>
+                    <tr><th>ID</th><th>Пользователь</th><th>Сумма</th><th>Статус</th><th>Дата</th><th></th></tr>
+                </thead>
+                <tbody>
+            `;
+            orders.forEach((o) => {
+                html += `
+                    <tr data-order-id="${o.order_id}">
+                        <td>${o.order_id}</td>
+                        <td>${o.user_id}</td>
+                        <td>${o.total_amount} ₽</td>
+                        <td>
+                            <select class="order-status-select">
+                                <option value="created" ${o.status === "created" ? "selected" : ""}>created</option>
+                                <option value="paid" ${o.status === "paid" ? "selected" : ""}>paid</option>
+                                <option value="shipped" ${o.status === "shipped" ? "selected" : ""}>shipped</option>
+                                <option value="done" ${o.status === "done" ? "selected" : ""}>done</option>
+                            </select>
+                        </td>
+                        <td>${o.created_at}</td>
+                        <td><button class="admin-order-save">Сохранить</button></td>
+                    </tr>
+                `;
+            });
+            html += "</tbody></table>";
+            el.innerHTML = html;
+
+            el.querySelectorAll(".admin-order-save").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const tr = e.target.closest("tr");
+                    const id = tr.getAttribute("data-order-id");
+                    const sel = tr.querySelector(".order-status-select");
+                    const status = sel.value;
+                    try {
+                        await apiFetch(`/admin/orders/${id}/status`, {
+                            method: "PATCH",
+                            body: JSON.stringify({ status }),
+                        });
+                        alert("Статус обновлён");
+                    } catch (err) {
+                        alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+        } catch (e) {
+            el.innerHTML = `<p class="message message_error">${e.message}</p>`;
+        }
+    }
+
+    async function loadUsers() {
+        const el = document.getElementById("admin-users-list");
+        el.innerHTML = "Загрузка...";
+        try {
+            const users = await apiFetch("/admin/users");
+            if (!users.length) {
+                el.innerHTML = "<p>Пользователей нет</p>";
+                return;
+            }
+            let html = `<table class="table">
+                <thead>
+                    <tr><th>ID</th><th>Email</th><th>Имя</th><th>Admin</th><th></th></tr>
+                </thead>
+                <tbody>
+            `;
+            users.forEach((u) => {
+                html += `
+                    <tr data-user-id="${u.user_id}">
+                        <td>${u.user_id}</td>
+                        <td>${u.email}</td>
+                        <td>${u.full_name}</td>
+                        <td>${u.is_admin ? "Да" : "Нет"}</td>
+                        <td>
+                            <button class="admin-user-toggle">
+                                ${u.is_admin ? "Снять админа" : "Сделать админом"}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            html += "</tbody></table>";
+            el.innerHTML = html;
+
+            el.querySelectorAll(".admin-user-toggle").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const tr = e.target.closest("tr");
+                    const id = tr.getAttribute("data-user-id");
+                    const isAdminText = tr.children[3].textContent.trim() === "Да";
+                    const newIsAdmin = !isAdminText;
+                    try {
+                        await apiFetch(`/admin/users/${id}`, {
+                            method: "PATCH",
+                            body: JSON.stringify({ is_admin: newIsAdmin }),
+                        });
+                        await loadUsers();
+                    } catch (err) {
+                        alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+        } catch (e) {
+            el.innerHTML = `<p class="message message_error">${e.message}</p>`;
+        }
+    }
+
+    // Навигация по секциям
+    root.querySelectorAll(".admin-nav button").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            const name = e.target.getAttribute("data-section");
+            switchSection(name);
+            if (name === "books") loadBooks();
+            if (name === "orders") loadOrders();
+            if (name === "users") loadUsers();
+        });
+    });
+
+    // Создание книги
+    const createForm = document.getElementById("admin-book-create-form");
+    const createMsg = document.getElementById("admin-book-create-msg");
+    createForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        createMsg.textContent = "";
+        const fd = new FormData(createForm);
+        const payload = {
+            title: fd.get("title"),
+            price: Number(fd.get("price")),
+            publication_year: fd.get("publication_year")
+                ? Number(fd.get("publication_year"))
+                : null,
+            pages: fd.get("pages") ? Number(fd.get("pages")) : null,
+            description: null,
+            isbn: null,
+            genre_id: null,
+            publisher_id: null,
+            author_ids: [],
+        };
+        try {
+            await apiFetch("/books", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+            createMsg.textContent = "Книга создана";
+            createForm.reset();
+            await loadBooks();
+        } catch (err) {
+            createMsg.textContent = err.message;
+            createMsg.classList.add("message_error");
+        }
+    });
+
+    (async () => {
+        const ok = await ensureAdmin();
+        if (!ok) return;
+        // по умолчанию показываем книги
+        switchSection("books");
+        await loadBooks();
+    })();
+}
+
 // --- Инициализация на загрузке ---
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -338,4 +582,5 @@ document.addEventListener("DOMContentLoaded", () => {
     initCartPage();
     initLoginPage();
     initRegisterPage();
+    initAdminPage();
 });

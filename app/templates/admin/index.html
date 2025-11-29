@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div id="admin-root">
+    <h1>Админ-панель</h1>
+
+    <p id="admin-check-msg">Проверка прав администратора...</p>
+
+    <div id="admin-content" style="display: none;">
+        <nav class="admin-nav">
+            <button data-section="books">Книги</button>
+            <button data-section="orders">Заказы</button>
+            <button data-section="users">Пользователи</button>
+        </nav>
+
+        <section id="admin-section-books" class="admin-section">
+            <h2>Книги</h2>
+            <div id="admin-books-list">Загрузка...</div>
+
+            <h3>Создать книгу</h3>
+            <form id="admin-book-create-form" class="form">
+                <label>
+                    Название
+                    <input type="text" name="title" required>
+                </label>
+                <label>
+                    Цена
+                    <input type="number" name="price" step="0.01" required>
+                </label>
+                <label>
+                    Год издания
+                    <input type="number" name="publication_year">
+                </label>
+                <label>
+                    Кол-во страниц
+                    <input type="number" name="pages">
+                </label>
+                <button type="submit">Создать</button>
+            </form>
+            <div id="admin-book-create-msg" class="message"></div>
+        </section>
+
+        <section id="admin-section-orders" class="admin-section" style="display:none;">
+            <h2>Заказы</h2>
+            <div id="admin-orders-list">Загрузка...</div>
+        </section>
+
+        <section id="admin-section-users" class="admin-section" style="display:none;">
+            <h2>Пользователи</h2>
+            <div id="admin-users-list">Загрузка...</div>
+        </section>
+    </div>
+</div>
+{% endblock %}
