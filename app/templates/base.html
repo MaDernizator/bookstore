@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Bookstore</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+<header class="header">
+    <div class="container header__content">
+        <a href="/" class="logo">Bookstore</a>
+        <nav class="nav">
+            <a href="/" class="nav__link">Каталог</a>
+            <a href="/cart" class="nav__link">Корзина</a>
+            <a href="/login" class="nav__link" id="nav-login-link">Войти</a>
+            <a href="/register" class="nav__link" id="nav-register-link">Регистрация</a>
+        </nav>
+    </div>
+</header>
+
+<main class="container main">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <p>Минимальный учебный интернет-магазин книг</p>
+    </div>
+</footer>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

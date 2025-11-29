@@ -1,11 +1,12 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ title }}</title>
-</head>
-<body>
-<h1>Bookstore работает</h1>
-<p>Здесь позже будет каталог книг.</p>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Каталог книг</h1>
+
+<div class="search">
+    <input type="text" id="search-input" placeholder="Поиск по названию">
+    <button id="search-btn">Искать</button>
+</div>
+
+<div id="books-list" class="cards"></div>
+{% endblock %}
