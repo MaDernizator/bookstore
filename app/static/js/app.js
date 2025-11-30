@@ -1046,7 +1046,7 @@ function initAdminPage() {
                 return false;
             }
             checkMsg.style.display = "none";
-            content.style.display = "block";
+            content.style.display = "";
             return true;
         } catch (e) {
             checkMsg.textContent = "Необходимо войти как администратор";
@@ -1057,6 +1057,10 @@ function initAdminPage() {
     function switchSection(name) {
         document.querySelectorAll(".admin-section").forEach((sec) => {
             sec.style.display = sec.id === "admin-section-" + name ? "block" : "none";
+        });
+
+        root.querySelectorAll(".admin-nav__btn").forEach((btn) => {
+            btn.classList.toggle("is-active", btn.getAttribute("data-section") === name);
         });
     }
 
@@ -1122,93 +1126,109 @@ function initAdminPage() {
                             return ch;
                     }
                 });
-            let html = `<table class="table">
+            let html = `<div class="admin-table-wrapper"><table class="table admin-table">
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Обложка</th>
-                        <th>Название</th>
+                        <th>Книга</th>
                         <th>Цена</th>
-                        <th>Обложка (загрузка)</th>
-                        <th></th>
+                        <th>Обложка</th>
+                        <th class="table__actions"></th>
                     </tr>
                 </thead>
                 <tbody>
             `;
             books.forEach((b) => {
                 const cover = b.cover_image
-                    ? `<img src="${b.cover_image}" alt="Обложка" style="max-width:60px; max-height:80px;">`
-                    : `<span class="small-muted">нет</span>`;
+                    ? `<div class="admin-cover-thumb"><img src="${b.cover_image}" alt="Обложка ${escapeHtml(b.title)}"></div>`
+                    : `<div class="admin-cover-thumb admin-cover-thumb_empty">Нет</div>`;
                 const authorString = (b.author_names || []).join(", ");
                 html += `
                     <tr data-book-id="${b.book_id}">
-                        <td>${b.book_id}</td>
+                        <td class="table__num">${b.book_id}</td>
+                        <td>
+                            <div class="admin-book-row">
+                                <div class="admin-book-row__title">${escapeHtml(b.title)}</div>
+                                <div class="small-muted">${escapeHtml(authorString) || "Без авторов"}</div>
+                            </div>
+                        </td>
+                        <td class="table__num">${b.price} ₽</td>
                         <td>${cover}</td>
-                        <td>
-                            ${escapeHtml(b.title)}
-                            <div class="small-muted">${escapeHtml(authorString) || "Без авторов"}</div>
-                        </td>
-                        <td>${b.price} ₽</td>
-                        <td>
-                            <input type="file" class="admin-cover-file" accept="image/*">
-                            <button class="admin-cover-upload">Загрузить</button>
-                        </td>
                         <td class="table__actions">
                             <button class="btn btn_ghost btn_sm admin-book-edit-toggle">Редактировать</button>
                             <button data-book-id="${b.book_id}" class="btn btn_danger btn_sm admin-book-delete">Удалить</button>
                         </td>
                     </tr>
                     <tr class="admin-book-edit-row" data-book-id="${b.book_id}" style="display: none;">
-                        <td colspan="6">
+                        <td colspan="5">
                             <form class="form admin-book-edit-form" data-book-id="${b.book_id}">
-                                <div class="form__row">
-                                    <label>Название
-                                        <input type="text" name="title" value="${escapeHtml(b.title)}" required>
-                                    </label>
+                                <div class="admin-edit-grid">
+                                    <div class="form__field">
+                                        <label class="form__label">Название</label>
+                                        <input class="input" type="text" name="title" value="${escapeHtml(b.title)}" required>
+                                    </div>
+                                    <div class="form__field">
+                                        <label class="form__label">Цена</label>
+                                        <input class="input" type="number" name="price" step="0.01" min="0" value="${b.price}" required>
+                                    </div>
+                                    <div class="form__field">
+                                        <label class="form__label">Год</label>
+                                        <input class="input" type="number" name="publication_year" value="${b.publication_year || ""}" placeholder="Например, 2024">
+                                    </div>
+                                    <div class="form__field">
+                                        <label class="form__label">Страниц</label>
+                                        <input class="input" type="number" name="pages" value="${b.pages || ""}">
+                                    </div>
+                                    <div class="form__field">
+                                        <label class="form__label">ISBN</label>
+                                        <input class="input" type="text" name="isbn" value="${escapeHtml(b.isbn || "")}" placeholder="ISBN">
+                                    </div>
+                                    <div class="form__field">
+                                        <label class="form__label">Жанр</label>
+                                        <input class="input" type="text" name="genre_name" list="admin-genre-options" value="${escapeHtml(b.genre_name || "")}" placeholder="Название жанра">
+                                    </div>
+                                    <div class="form__field">
+                                        <label class="form__label">Издательство</label>
+                                        <input class="input" type="text" name="publisher_name" list="admin-publisher-options" value="${escapeHtml(b.publisher_name || "")}" placeholder="Название издательства">
+                                    </div>
+                                    <div class="form__field">
+                                        <label class="form__label">Авторы</label>
+                                        <input class="input" type="text" name="author_names" list="admin-author-options" value="${escapeHtml(authorString)}" placeholder="Автор1, Автор2">
+                                        <p class="form__hint">Укажите несколько авторов через запятую</p>
+                                    </div>
                                 </div>
-                                <div class="form__row">
-                                    <label>Цена
-                                        <input type="number" name="price" step="0.01" min="0" value="${b.price}" required>
-                                    </label>
-                                    <label>Год
-                                        <input type="number" name="publication_year" value="${b.publication_year || ""}" placeholder="Например, 2024">
-                                    </label>
-                                    <label>Страниц
-                                        <input type="number" name="pages" value="${b.pages || ""}">
-                                    </label>
+                                <div class="admin-edit-grid admin-edit-grid_wide">
+                                    <div class="form__field">
+                                        <label class="form__label">Описание</label>
+                                        <textarea class="input" name="description" rows="3" placeholder="Описание книги">${escapeHtml(b.description || "")}</textarea>
+                                    </div>
+                                    <div class="admin-cover-block">
+                                        <div class="admin-cover-block__preview">
+                                            ${cover}
+                                        </div>
+                                        <div class="admin-cover-block__fields">
+                                            <label class="form__label">Обложка</label>
+                                            <div class="admin-cover-block__controls">
+                                                <input class="input admin-cover-input" type="file" accept="image/*">
+                                                <button type="button" class="btn btn_ghost btn_sm admin-cover-submit">Загрузить обложку</button>
+                                            </div>
+                                            <p class="form__hint">PNG или JPG, до 5 МБ</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form__row">
-                                    <label>ISBN
-                                        <input type="text" name="isbn" value="${escapeHtml(b.isbn || "")}" placeholder="ISBN">
-                                    </label>
+                                <div class="form__actions admin-edit-actions">
+                                    <div class="admin-edit-actions__buttons">
+                                        <button type="submit" class="btn btn_sm">Сохранить</button>
+                                        <button type="button" class="btn btn_ghost btn_sm admin-book-edit-toggle">Свернуть</button>
+                                    </div>
+                                    <p class="form__message admin-book-edit-msg"></p>
                                 </div>
-                                <div class="form__row">
-                                    <label>Жанр
-                                        <input type="text" name="genre_name" list="admin-genre-options" value="${escapeHtml(b.genre_name || "")}" placeholder="Название жанра">
-                                    </label>
-                                    <label>Издательство
-                                        <input type="text" name="publisher_name" list="admin-publisher-options" value="${escapeHtml(b.publisher_name || "")}" placeholder="Название издательства">
-                                    </label>
-                                    <label>Авторы
-                                        <input type="text" name="author_names" list="admin-author-options" value="${escapeHtml(authorString)}" placeholder="Автор1, Автор2">
-                                    </label>
-                                </div>
-                                <div class="form__row">
-                                    <label>Описание
-                                        <textarea name="description" rows="3" placeholder="Описание книги">${escapeHtml(b.description || "")}</textarea>
-                                    </label>
-                                </div>
-                                <div class="form__actions">
-                                    <button type="submit" class="btn btn_primary btn_sm">Сохранить изменения</button>
-                                    <button type="button" class="btn btn_ghost btn_sm admin-book-edit-toggle">Свернуть</button>
-                                </div>
-                                <div class="message admin-book-edit-msg"></div>
                             </form>
                         </td>
                     </tr>
                 `;
             });
-            html += "</tbody></table>";
+            html += "</tbody></table></div>";
             el.innerHTML = html;
 
             // удаление книг
@@ -1325,21 +1345,27 @@ function initAdminPage() {
                 });
             });
 
-            // загрузка обложки
-            el.querySelectorAll(".admin-cover-upload").forEach((btn) => {
-                btn.addEventListener("click", async (e) => {
-                    const tr = e.target.closest("tr");
-                    const id = tr.getAttribute("data-book-id");
-                    const fileInput = tr.querySelector(".admin-cover-file");
-                    if (!fileInput.files || !fileInput.files[0]) {
-                        alert("Выберите файл");
+            el.querySelectorAll(".admin-book-edit-form").forEach((form) => {
+                const coverBtn = form.querySelector(".admin-cover-submit");
+                const coverInput = form.querySelector(".admin-cover-input");
+                const msg = form.querySelector(".admin-book-edit-msg");
+                const bookId = form.getAttribute("data-book-id");
+
+                coverBtn?.addEventListener("click", async () => {
+                    msg.textContent = "";
+                    msg.classList.remove("message_error");
+
+                    if (!coverInput?.files || !coverInput.files[0]) {
+                        msg.textContent = "Выберите файл обложки";
+                        msg.classList.add("message_error");
                         return;
                     }
+
                     const formData = new FormData();
-                    formData.append("file", fileInput.files[0]);
+                    formData.append("file", coverInput.files[0]);
 
                     try {
-                        await fetch(`/api/admin/books/${id}/cover`, {
+                        await fetch(`/api/admin/books/${bookId}/cover`, {
                             method: "POST",
                             headers: {
                                 "Authorization": getToken() ? `Bearer ${getToken()}` : "",
@@ -1353,10 +1379,11 @@ function initAdminPage() {
                             return resp.json();
                         });
 
-                        alert("Обложка загружена");
+                        msg.textContent = "Обложка обновлена";
                         await loadBooks();
                     } catch (err) {
-                        alert("Ошибка: " + err.message);
+                        msg.textContent = err.message;
+                        msg.classList.add("message_error");
                     }
                 });
             });

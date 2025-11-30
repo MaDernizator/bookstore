@@ -1,126 +1,201 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div id="admin-root">
-    <h1>Админ-панель</h1>
+<div id="admin-root" class="admin-page">
+    <div class="admin-hero panel">
+        <div>
+            <p class="eyebrow">Управление магазином</p>
+            <h1>Админ-панель</h1>
+            <p class="text-muted">Работайте с каталогом, пользователями и заказами в одном месте.</p>
+        </div>
+        <div class="admin-hero__meta">
+            <div class="admin-chip">Каталог</div>
+            <div class="admin-chip">Клиенты</div>
+            <div class="admin-chip">Логистика</div>
+        </div>
+    </div>
 
-    <p id="admin-check-msg">Проверка прав администратора...</p>
+    <p id="admin-check-msg" class="admin-status">Проверка прав администратора...</p>
 
-    <div id="admin-content" style="display: none;">
-        <nav class="admin-nav">
-            <button data-section="books">Книги</button>
-            <button data-section="orders">Заказы</button>
-            <button data-section="users">Пользователи</button>
-            <button data-section="genres">Жанры</button>
-            <button data-section="authors">Авторы</button>
-            <button data-section="publishers">Издательства</button>
-        </nav>
+    <div id="admin-content" class="admin-layout" style="display: none;">
+        <aside class="admin-sidebar panel" aria-label="Навигация по разделам админ-панели">
+            <p class="admin-sidebar__title">Разделы</p>
+            <nav class="admin-nav">
+                <button data-section="books" class="admin-nav__btn is-active">Книги</button>
+                <button data-section="orders" class="admin-nav__btn">Заказы</button>
+                <button data-section="users" class="admin-nav__btn">Пользователи</button>
+                <button data-section="genres" class="admin-nav__btn">Жанры</button>
+                <button data-section="authors" class="admin-nav__btn">Авторы</button>
+                <button data-section="publishers" class="admin-nav__btn">Издательства</button>
+            </nav>
+        </aside>
 
-        <section id="admin-section-books" class="admin-section">
-            <h2>Книги</h2>
-            <div id="admin-books-list">Загрузка...</div>
+        <div class="admin-sections">
+            <section id="admin-section-books" class="admin-section panel">
+                <div class="admin-section__header">
+                    <div>
+                        <p class="eyebrow">Каталог</p>
+                        <h2>Книги</h2>
+                        <p class="text-muted">Обновляйте карточки книг и создавайте новые позиции.</p>
+                    </div>
+                </div>
 
-            <h3>Создать книгу</h3>
-            <form id="admin-book-create-form" class="form">
-                <label>
-                    Название
-                    <input type="text" name="title" required>
-                </label>
-                <label>
-                    Цена
-                    <input type="number" name="price" step="0.01" required>
-                </label>
-                <label>
-                    Год издания
-                    <input type="number" name="publication_year">
-                </label>
-                <label>
-                    Кол-во страниц
-                    <input type="number" name="pages">
-                </label>
-                <label>
-                    Жанр
-                    <input type="text" name="genre_name" list="admin-genre-options" placeholder="Начните вводить жанр">
-                    <datalist id="admin-genre-options"></datalist>
-                </label>
-                <label>
-                    Авторы (через запятую)
-                    <input type="text" name="author_names" list="admin-author-options" placeholder="Например: Имя Автора, Другой Автор">
-                    <datalist id="admin-author-options"></datalist>
-                </label>
-                <label>
-                    Издательство
-                    <input type="text" name="publisher_name" list="admin-publisher-options" placeholder="Начните вводить издательство">
-                    <datalist id="admin-publisher-options"></datalist>
-                </label>
-                <!-- НОВОЕ ПОЛЕ -->
-                <label>
-                    Обложка
-                    <input type="file" name="cover" id="admin-book-create-cover" accept="image/*">
-                </label>
+                <div class="admin-grid">
+                    <div class="admin-card">
+                        <div class="admin-card__header">
+                            <div>
+                                <p class="eyebrow">Новая позиция</p>
+                                <h3>Добавить книгу</h3>
+                            </div>
+                            <p class="text-muted">Заполните основные поля и загрузите обложку.</p>
+                        </div>
 
-                <button type="submit">Создать</button>
-            </form>
-            <div id="admin-book-create-msg" class="message"></div>
-        </section>
+                        <form id="admin-book-create-form" class="form admin-form">
+                            <div class="admin-form__grid">
+                                <div class="form__field">
+                                    <label class="form__label">Название</label>
+                                    <input class="input" type="text" name="title" required placeholder="Например, Улисс">
+                                </div>
+                                <div class="form__field">
+                                    <label class="form__label">Цена</label>
+                                    <input class="input" type="number" name="price" step="0.01" min="0" required placeholder="990">
+                                </div>
+                                <div class="form__field">
+                                    <label class="form__label">Год издания</label>
+                                    <input class="input" type="number" name="publication_year" placeholder="2024">
+                                </div>
+                                <div class="form__field">
+                                    <label class="form__label">Кол-во страниц</label>
+                                    <input class="input" type="number" name="pages" placeholder="320">
+                                </div>
+                                <div class="form__field">
+                                    <label class="form__label">Жанр</label>
+                                    <input class="input" type="text" name="genre_name" list="admin-genre-options" placeholder="Начните вводить жанр">
+                                    <datalist id="admin-genre-options"></datalist>
+                                </div>
+                                <div class="form__field">
+                                    <label class="form__label">Авторы</label>
+                                    <input class="input" type="text" name="author_names" list="admin-author-options" placeholder="Имя Автора, Другой Автор">
+                                    <datalist id="admin-author-options"></datalist>
+                                    <p class="form__hint">Укажите несколько авторов через запятую</p>
+                                </div>
+                                <div class="form__field">
+                                    <label class="form__label">Издательство</label>
+                                    <input class="input" type="text" name="publisher_name" list="admin-publisher-options" placeholder="Начните вводить издательство">
+                                    <datalist id="admin-publisher-options"></datalist>
+                                </div>
+                                <div class="form__field">
+                                    <label class="form__label">Обложка</label>
+                                    <input class="input" type="file" name="cover" id="admin-book-create-cover" accept="image/*">
+                                    <p class="form__hint">PNG или JPG, до 5 МБ</p>
+                                </div>
+                            </div>
 
-        <section id="admin-section-orders" class="admin-section" style="display:none;">
-            <h2>Заказы</h2>
-            <div id="admin-orders-list">Загрузка...</div>
-        </section>
+                            <div class="form__actions">
+                                <button type="submit" class="btn">Создать</button>
+                                <p id="admin-book-create-msg" class="form__message"></p>
+                            </div>
+                        </form>
+                    </div>
 
-        <section id="admin-section-users" class="admin-section" style="display:none;">
-            <h2>Пользователи</h2>
-            <div id="admin-users-list">Загрузка...</div>
-        </section>
+                    <div class="admin-card">
+                        <div class="admin-card__header">
+                            <div>
+                                <p class="eyebrow">Каталог</p>
+                                <h3>Список книг</h3>
+                            </div>
+                            <p class="text-muted">Редактируйте данные и обложки непосредственно в таблице.</p>
+                        </div>
+                        <div id="admin-books-list">Загрузка...</div>
+                    </div>
+                </div>
+            </section>
 
-        <section id="admin-section-genres" class="admin-section" style="display:none;">
-            <h2>Жанры</h2>
-            <div id="admin-genres-list">Загрузка...</div>
+            <section id="admin-section-orders" class="admin-section panel" style="display:none;">
+                <div class="admin-section__header">
+                    <p class="eyebrow">Продажи</p>
+                    <h2>Заказы</h2>
+                    <p class="text-muted">Отслеживайте статусы и суммы заказов.</p>
+                </div>
+                <div id="admin-orders-list">Загрузка...</div>
+            </section>
 
-            <h3>Создать жанр</h3>
-            <form id="admin-genre-create-form" class="form">
-                <label>
-                    Название
-                    <input type="text" name="name" required>
-                </label>
+            <section id="admin-section-users" class="admin-section panel" style="display:none;">
+                <div class="admin-section__header">
+                    <p class="eyebrow">Клиенты</p>
+                    <h2>Пользователи</h2>
+                    <p class="text-muted">Управляйте правами и статусами аккаунтов.</p>
+                </div>
+                <div id="admin-users-list">Загрузка...</div>
+            </section>
 
-                <button type="submit">Создать</button>
-            </form>
-            <div id="admin-genre-create-msg" class="message"></div>
-        </section>
+            <section id="admin-section-genres" class="admin-section panel" style="display:none;">
+                <div class="admin-section__header">
+                    <p class="eyebrow">Таксономия</p>
+                    <h2>Жанры</h2>
+                    <p class="text-muted">Добавляйте и правьте жанры, чтобы каталог оставался точным.</p>
+                </div>
 
-        <section id="admin-section-authors" class="admin-section" style="display:none;">
-            <h2>Авторы</h2>
-            <div id="admin-authors-list">Загрузка...</div>
+                <div id="admin-genres-list">Загрузка...</div>
 
-            <h3>Создать автора</h3>
-            <form id="admin-author-create-form" class="form">
-                <label>
-                    Полное имя
-                    <input type="text" name="full_name" required>
-                </label>
+                <div class="admin-card admin-card_inline">
+                    <form id="admin-genre-create-form" class="form admin-form">
+                        <div class="form__field">
+                            <label class="form__label">Название жанра</label>
+                            <input class="input" type="text" name="name" required placeholder="Например, Фантастика">
+                        </div>
+                        <div class="form__actions">
+                            <button type="submit" class="btn btn_ghost">Создать жанр</button>
+                            <p id="admin-genre-create-msg" class="form__message"></p>
+                        </div>
+                    </form>
+                </div>
+            </section>
 
-                <button type="submit">Создать</button>
-            </form>
-            <div id="admin-author-create-msg" class="message"></div>
-        </section>
+            <section id="admin-section-authors" class="admin-section panel" style="display:none;">
+                <div class="admin-section__header">
+                    <p class="eyebrow">Экспертиза</p>
+                    <h2>Авторы</h2>
+                    <p class="text-muted">Держите карточки авторов в порядке.</p>
+                </div>
+                <div id="admin-authors-list">Загрузка...</div>
 
-        <section id="admin-section-publishers" class="admin-section" style="display:none;">
-            <h2>Издательства</h2>
-            <div id="admin-publishers-list">Загрузка...</div>
+                <div class="admin-card admin-card_inline">
+                    <form id="admin-author-create-form" class="form admin-form">
+                        <div class="form__field">
+                            <label class="form__label">Полное имя</label>
+                            <input class="input" type="text" name="full_name" required placeholder="Имя Фамилия">
+                        </div>
+                        <div class="form__actions">
+                            <button type="submit" class="btn btn_ghost">Создать автора</button>
+                            <p id="admin-author-create-msg" class="form__message"></p>
+                        </div>
+                    </form>
+                </div>
+            </section>
 
-            <h3>Создать издательство</h3>
-            <form id="admin-publisher-create-form" class="form">
-                <label>
-                    Название
-                    <input type="text" name="name" required>
-                </label>
+            <section id="admin-section-publishers" class="admin-section panel" style="display:none;">
+                <div class="admin-section__header">
+                    <p class="eyebrow">Партнёры</p>
+                    <h2>Издательства</h2>
+                    <p class="text-muted">Ведите список издательств для каталога.</p>
+                </div>
+                <div id="admin-publishers-list">Загрузка...</div>
 
-                <button type="submit">Создать</button>
-            </form>
-            <div id="admin-publisher-create-msg" class="message"></div>
-        </section>
+                <div class="admin-card admin-card_inline">
+                    <form id="admin-publisher-create-form" class="form admin-form">
+                        <div class="form__field">
+                            <label class="form__label">Название</label>
+                            <input class="input" type="text" name="name" required placeholder="Название издательства">
+                        </div>
+                        <div class="form__actions">
+                            <button type="submit" class="btn btn_ghost">Создать издательство</button>
+                            <p id="admin-publisher-create-msg" class="form__message"></p>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </div>
     </div>
 </div>
 {% endblock %}
