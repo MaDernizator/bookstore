@@ -411,6 +411,13 @@ async function initIndexPage() {
             hideEmptyState();
             listEl.innerHTML = "";
             books.forEach((b) => {
+                const authors =
+                    b.author_names?.length
+                        ? b.author_names.join(", ")
+                        : "Не указан";
+                const genre = b.genre_name || "Не указан";
+                const publisher = b.publisher_name || "Не указано";
+
                 const card = document.createElement("div");
                 card.className = "card";
                 card.setAttribute("role", "listitem");
@@ -429,6 +436,11 @@ async function initIndexPage() {
                                 <div class="card__meta">
                                     <span class="pill">Год: ${b.publication_year || "—"}</span>
                                     <span class="pill pill_primary">${b.price} ₽</span>
+                                </div>
+                                <div class="card__details">
+                                    <p class="card__detail"><strong>Автор:</strong> ${authors}</p>
+                                    <p class="card__detail"><strong>Жанр:</strong> ${genre}</p>
+                                    <p class="card__detail"><strong>Издательство:</strong> ${publisher}</p>
                                 </div>
                             </div>
                             <p class="card__hint">Перейдите в карточку, чтобы прочитать описание и добавить книгу в корзину.</p>
@@ -591,6 +603,12 @@ async function initBookDetailPage() {
 
     try {
         const book = await apiFetch(`/books/${bookId}`);
+        const authors =
+            book.author_names?.length
+                ? book.author_names.join(", ")
+                : "Не указан";
+        const genre = book.genre_name || "Не указан";
+        const publisher = book.publisher_name || "Не указано";
         const cover = book.cover_image
             ? `<div class="book-detail__cover"><img src="${book.cover_image}" alt="Обложка"></div>`
             : `<div class="book-detail__cover book-detail__cover_placeholder">Нет обложки</div>`;
@@ -600,6 +618,11 @@ async function initBookDetailPage() {
                 ${cover}
                 <div class="book-detail__info">
                     <h2>${book.title}</h2>
+                    <div class="book-detail__meta">
+                        <p><strong>Автор:</strong> ${authors}</p>
+                        <p><strong>Жанр:</strong> ${genre}</p>
+                        <p><strong>Издательство:</strong> ${publisher}</p>
+                    </div>
                     <p>${book.description || ""}</p>
                     <p><strong>Цена:</strong> ${book.price} ₽</p>
                     <p><strong>Год:</strong> ${book.publication_year || "-"}</p>
