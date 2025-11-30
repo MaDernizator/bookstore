@@ -1,13 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Корзина</h1>
+<section aria-labelledby="cart-heading">
+    <h1 id="cart-heading">Корзина</h1>
 
-<div id="cart-content">
-    Загрузка корзины...
-</div>
+    <div id="cart-content" role="status" aria-live="polite">
+        Загрузка корзины...
+    </div>
 
-<button id="create-order-btn">Оформить заказ</button>
+    <button id="create-order-btn">Оформить заказ</button>
 
-<div id="order-message" class="message"></div>
+    <div id="order-message" class="message" role="status" aria-live="polite"></div>
+</section>
 {% endblock %}

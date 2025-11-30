@@ -147,6 +147,13 @@ function initMobileNavigation() {
         document.body.classList.toggle("drawer-open", shouldOpen);
         burger.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
         drawer.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+        overlay.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+
+        if (shouldOpen) {
+            closeBtn?.focus();
+        } else {
+            burger.focus();
+        }
     };
 
     burger.addEventListener("click", () => toggleMenu());
@@ -171,6 +178,7 @@ function initMobileNavigation() {
 async function initIndexPage() {
     const listEl = document.getElementById("books-list");
     if (!listEl) return;
+    listEl.setAttribute("aria-busy", "true");
 
     const searchInput = document.getElementById("search-input");
     const searchBtn = document.getElementById("search-btn");
@@ -194,6 +202,8 @@ async function initIndexPage() {
     const filtersWrapper = document.querySelector(".catalog-filters");
     const filtersToggle = document.getElementById("filters-toggle");
     const emptyStateEl = document.getElementById("books-empty-state");
+    const filtersAnnouncer = document.getElementById("active-filters-announcer");
+    const pageStatus = document.getElementById("page-status");
 
     const pagePrev = document.getElementById("page-prev");
     const pageNext = document.getElementById("page-next");
@@ -222,6 +232,7 @@ async function initIndexPage() {
     const updateSearchState = () => {
         if (!searchWrapper || !searchInput) return;
         searchWrapper.classList.toggle("is-filled", !!searchInput.value.trim());
+        announceFilters();
     };
 
     const toggleAccordion = () => {
@@ -237,6 +248,12 @@ async function initIndexPage() {
         pagePrev.disabled = currentPage <= 1;
         pageNext.disabled = !hasMore;
         pageInfo.textContent = `Страница ${currentPage}`;
+        pagePrev.setAttribute("aria-disabled", pagePrev.disabled ? "true" : "false");
+        pageNext.setAttribute("aria-disabled", pageNext.disabled ? "true" : "false");
+        if (pageStatus) {
+            const nextPageText = pageNext.disabled ? "конец списка" : "можно перейти вперёд";
+            pageStatus.textContent = `Сейчас страница ${currentPage}, ${nextPageText}`;
+        }
     }
 
     const describeActiveFilters = () => {
@@ -256,6 +273,14 @@ async function initIndexPage() {
         if (maxYearInput?.value) active.push(`до ${maxYearInput.value}`);
         if (orderSelect?.value) active.push(`сортировка: ${orderSelect.options[orderSelect.selectedIndex]?.textContent}`);
         return active;
+    };
+
+    const announceFilters = () => {
+        if (!filtersAnnouncer) return;
+        const active = describeActiveFilters();
+        filtersAnnouncer.textContent = active.length
+            ? `Активные фильтры: ${active.join(", ")}`
+            : "Фильтры не применены";
     };
 
     const hideEmptyState = () => {
@@ -316,6 +341,7 @@ async function initIndexPage() {
         });
         updateSearchState();
         currentPage = 1;
+        announceFilters();
         loadBooks();
     };
 
@@ -345,6 +371,7 @@ async function initIndexPage() {
     }
 
     async function loadBooks() {
+        listEl.setAttribute("aria-busy", "true");
         hideEmptyState();
         listEl.innerHTML = renderCardSkeletons();
 
@@ -386,6 +413,8 @@ async function initIndexPage() {
             books.forEach((b) => {
                 const card = document.createElement("div");
                 card.className = "card";
+                card.setAttribute("role", "listitem");
+                card.setAttribute("aria-label", `${b.title}. Цена ${b.price} ₽`);
 
                 const cover = b.cover_image
                     ? `<div class="card__cover"><img src="${b.cover_image}" alt="Обложка"></div>`
@@ -416,6 +445,8 @@ async function initIndexPage() {
             });
         } catch (e) {
             listEl.innerHTML = `<p class="message message_error">${e.message}</p>`;
+        } finally {
+            listEl.setAttribute("aria-busy", "false");
         }
     }
 
@@ -456,6 +487,7 @@ async function initIndexPage() {
         const eventName = input.tagName === "SELECT" ? "change" : "input";
         input.addEventListener(eventName, () => {
             syncQuickFiltersWithInputs();
+            announceFilters();
             debouncedFilterChange();
         });
     });
@@ -516,6 +548,7 @@ async function initIndexPage() {
     quickFilterHandlers.forEach(({ el, apply }) => {
         el?.addEventListener("change", () => {
             apply();
+            announceFilters();
             debouncedFilterChange();
         });
     });
@@ -541,6 +574,7 @@ async function initIndexPage() {
 
     updateSearchState();
     syncQuickFiltersWithInputs();
+    announceFilters();
     await loadFilters();
     await loadBooks();
 }

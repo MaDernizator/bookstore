@@ -7,6 +7,8 @@
     --color-text: #1f2430;
     --color-text-muted: #555b6a;
     --color-accent: #f97316;
+    --color-focus: #111827;
+    --color-focus-ghost: rgba(76, 81, 191, 0.25);
 
     --font-base: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
     --font-heading: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -35,6 +37,36 @@ body {
     line-height: 1.6;
 }
 
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.skip-link {
+    position: absolute;
+    left: -999px;
+    top: -999px;
+    background: var(--color-primary);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    z-index: 60;
+    box-shadow: var(--shadow-sm);
+}
+
+.skip-link:focus-visible {
+    left: var(--space-md);
+    top: var(--space-md);
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+}
+
 .text-muted {
     color: var(--color-text-muted);
 }
@@ -57,6 +89,21 @@ a {
 a:hover {
     color: var(--color-primary-strong);
     text-decoration: underline;
+}
+
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.header__burger:focus-visible,
+.drawer__close:focus-visible,
+.header__pill:focus-visible,
+.nav__link:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 4px var(--color-focus-ghost);
 }
 
 h1, h2, h3 {
@@ -192,10 +239,6 @@ p {
     padding: 8px 10px;
     font-size: 14px;
     color: var(--color-text);
-}
-
-.header__search input:focus {
-    outline: none;
 }
 
 .header__search-btn {
