@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.models import Author, Book, Genre, Publisher, User
 from app.services.auth_service import create_access_token
 
+
 def get_admin_token(db: Session):
     # ищем первого админа
     admin: User | None = (
@@ -54,6 +55,7 @@ def test_admin_create_and_list_books(client: TestClient, db_session, create_user
     assert resp.status_code == 200
     book2 = resp.json()
     assert book2["book_id"] == book_id
+
 
 def test_books_filters_and_sorting(client: TestClient, db_session, create_user):
     # админ
@@ -159,3 +161,59 @@ def test_admin_create_book_creates_missing_relations(
     assert db_book.genre_id == genre.genre_id
     assert db_book.publisher_id == publisher.publisher_id
     assert {a.full_name for a in db_book.authors} == set(payload["author_names"])
+
+
+def test_admin_update_book_all_fields(client: TestClient, db_session, create_user):
+    admin = create_user("adminupdate@example.com", "adminpass", is_admin=True)
+    token = create_access_token({"sub": admin.email})
+
+    create_resp = client.post(
+        "/api/books/",
+        json={
+            "title": "Original",
+            "description": "",
+            "price": 100,
+            "publication_year": 2020,
+            "pages": 200,
+            "isbn": "111-222",
+            "genre_id": None,
+            "publisher_id": None,
+            "author_ids": [],
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert create_resp.status_code == 201
+    book_id = create_resp.json()["book_id"]
+
+    update_payload = {
+        "title": "Updated Title",
+        "description": "Updated description",
+        "price": 555,
+        "publication_year": 2026,
+        "pages": 321,
+        "isbn": "999-888",
+        "genre_name": "Updated Genre",
+        "publisher_name": "Updated Publisher",
+        "author_names": ["Updated Author One", "Updated Author Two"],
+    }
+
+    resp = client.put(
+        f"/api/books/{book_id}",
+        json=update_payload,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert resp.status_code == 200
+    updated = resp.json()
+    assert updated["title"] == update_payload["title"]
+    assert updated["description"] == update_payload["description"]
+    assert float(updated["price"]) == update_payload["price"]
+    assert updated["publication_year"] == update_payload["publication_year"]
+    assert updated["pages"] == update_payload["pages"]
+    assert updated["isbn"] == update_payload["isbn"]
+
+    db_book = db_session.query(Book).get(book_id)
+    assert db_book is not None
+    assert db_book.genre is not None and db_book.genre.name == update_payload["genre_name"]
+    assert db_book.publisher is not None and db_book.publisher.name == update_payload["publisher_name"]
+    assert {a.full_name for a in db_book.authors} == set(update_payload["author_names"])

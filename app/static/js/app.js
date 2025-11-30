@@ -1105,6 +1105,23 @@ function initAdminPage() {
                 el.innerHTML = "<p>Книг пока нет</p>";
                 return;
             }
+            const escapeHtml = (str) =>
+                (str || "").toString().replace(/[&<>'"]/g, (ch) => {
+                    switch (ch) {
+                        case "&":
+                            return "&amp;";
+                        case "<":
+                            return "&lt;";
+                        case ">":
+                            return "&gt;";
+                        case '"':
+                            return "&quot;";
+                        case "'":
+                            return "&#39;";
+                        default:
+                            return ch;
+                    }
+                });
             let html = `<table class="table">
                 <thead>
                     <tr>
@@ -1122,18 +1139,71 @@ function initAdminPage() {
                 const cover = b.cover_image
                     ? `<img src="${b.cover_image}" alt="Обложка" style="max-width:60px; max-height:80px;">`
                     : `<span class="small-muted">нет</span>`;
+                const authorString = (b.author_names || []).join(", ");
                 html += `
                     <tr data-book-id="${b.book_id}">
                         <td>${b.book_id}</td>
                         <td>${cover}</td>
-                        <td>${b.title}</td>
+                        <td>
+                            ${escapeHtml(b.title)}
+                            <div class="small-muted">${escapeHtml(authorString) || "Без авторов"}</div>
+                        </td>
                         <td>${b.price} ₽</td>
                         <td>
                             <input type="file" class="admin-cover-file" accept="image/*">
                             <button class="admin-cover-upload">Загрузить</button>
                         </td>
-                        <td>
-                            <button data-book-id="${b.book_id}" class="admin-book-delete">Удалить</button>
+                        <td class="table__actions">
+                            <button class="btn btn_ghost btn_sm admin-book-edit-toggle">Редактировать</button>
+                            <button data-book-id="${b.book_id}" class="btn btn_danger btn_sm admin-book-delete">Удалить</button>
+                        </td>
+                    </tr>
+                    <tr class="admin-book-edit-row" data-book-id="${b.book_id}" style="display: none;">
+                        <td colspan="6">
+                            <form class="form admin-book-edit-form" data-book-id="${b.book_id}">
+                                <div class="form__row">
+                                    <label>Название
+                                        <input type="text" name="title" value="${escapeHtml(b.title)}" required>
+                                    </label>
+                                </div>
+                                <div class="form__row">
+                                    <label>Цена
+                                        <input type="number" name="price" step="0.01" min="0" value="${b.price}" required>
+                                    </label>
+                                    <label>Год
+                                        <input type="number" name="publication_year" value="${b.publication_year || ""}" placeholder="Например, 2024">
+                                    </label>
+                                    <label>Страниц
+                                        <input type="number" name="pages" value="${b.pages || ""}">
+                                    </label>
+                                </div>
+                                <div class="form__row">
+                                    <label>ISBN
+                                        <input type="text" name="isbn" value="${escapeHtml(b.isbn || "")}" placeholder="ISBN">
+                                    </label>
+                                </div>
+                                <div class="form__row">
+                                    <label>Жанр
+                                        <input type="text" name="genre_name" list="admin-genre-options" value="${escapeHtml(b.genre_name || "")}" placeholder="Название жанра">
+                                    </label>
+                                    <label>Издательство
+                                        <input type="text" name="publisher_name" list="admin-publisher-options" value="${escapeHtml(b.publisher_name || "")}" placeholder="Название издательства">
+                                    </label>
+                                    <label>Авторы
+                                        <input type="text" name="author_names" list="admin-author-options" value="${escapeHtml(authorString)}" placeholder="Автор1, Автор2">
+                                    </label>
+                                </div>
+                                <div class="form__row">
+                                    <label>Описание
+                                        <textarea name="description" rows="3" placeholder="Описание книги">${escapeHtml(b.description || "")}</textarea>
+                                    </label>
+                                </div>
+                                <div class="form__actions">
+                                    <button type="submit" class="btn btn_primary btn_sm">Сохранить изменения</button>
+                                    <button type="button" class="btn btn_ghost btn_sm admin-book-edit-toggle">Свернуть</button>
+                                </div>
+                                <div class="message admin-book-edit-msg"></div>
+                            </form>
                         </td>
                     </tr>
                 `;
@@ -1151,6 +1221,106 @@ function initAdminPage() {
                         await loadBooks();
                     } catch (err) {
                         alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+
+            // раскрытие форм редактирования
+            el.querySelectorAll(".admin-book-edit-toggle").forEach((btn) => {
+                btn.addEventListener("click", (e) => {
+                    const tr = e.target.closest("tr");
+                    const bookId = tr?.getAttribute("data-book-id");
+                    const editRow = bookId
+                        ? el.querySelector(`.admin-book-edit-row[data-book-id="${bookId}"]`)
+                        : null;
+                    if (editRow) {
+                        editRow.style.display =
+                            editRow.style.display === "none" || !editRow.style.display
+                                ? "table-row"
+                                : "none";
+                    }
+                });
+            });
+
+            // сохранение изменений книги
+            el.querySelectorAll(".admin-book-edit-form").forEach((form) => {
+                form.addEventListener("submit", async (e) => {
+                    e.preventDefault();
+                    const bookId = form.getAttribute("data-book-id");
+                    const msg = form.querySelector(".admin-book-edit-msg");
+                    if (msg) {
+                        msg.textContent = "";
+                        msg.classList.remove("message_error");
+                    }
+
+                    const fd = new FormData(form);
+
+                    const title = fd.get("title")?.toString().trim();
+                    if (!title) {
+                        if (msg) {
+                            msg.textContent = "Название не может быть пустым";
+                            msg.classList.add("message_error");
+                        }
+                        return;
+                    }
+
+                    const price = Number(fd.get("price"));
+                    if (Number.isNaN(price)) {
+                        if (msg) {
+                            msg.textContent = "Укажите корректную цену";
+                            msg.classList.add("message_error");
+                        }
+                        return;
+                    }
+
+                    const parseIntField = (name) => {
+                        const raw = fd.get(name);
+                        if (raw === null) return null;
+                        const str = raw.toString().trim();
+                        if (!str) return null;
+                        const num = Number(str);
+                        return Number.isNaN(num) ? null : num;
+                    };
+
+                    const authorNamesRaw = fd.get("author_names");
+                    const authorNames = authorNamesRaw
+                        ? authorNamesRaw
+                              .toString()
+                              .split(",")
+                              .map((n) => n.trim())
+                              .filter(Boolean)
+                        : [];
+
+                    const payload = {
+                        title,
+                        price,
+                        publication_year: parseIntField("publication_year"),
+                        pages: parseIntField("pages"),
+                        isbn: fd.get("isbn")?.toString().trim() || null,
+                        genre_name: fd.get("genre_name")?.toString().trim() || null,
+                        publisher_name: fd.get("publisher_name")?.toString().trim() || null,
+                        author_names: authorNames,
+                        description: fd.get("description")?.toString().trim() || null,
+                    };
+
+                    try {
+                        await apiFetch(`/books/${bookId}`, {
+                            method: "PUT",
+                            body: JSON.stringify(payload),
+                        });
+                        if (msg) {
+                            msg.textContent = "Сохранено";
+                            msg.classList.remove("message_error");
+                        }
+                        await loadBooks();
+                        await updateBookFormOptions();
+                    } catch (err) {
+                        if (msg) {
+                            msg.textContent = err.message;
+                            msg.classList.add("message_error");
+                        } else {
+                            alert("Ошибка: " + err.message);
+                        }
                     }
                 });
             });

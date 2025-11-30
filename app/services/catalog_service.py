@@ -108,18 +108,70 @@ def create_book(db: Session, book_in: BookCreate) -> Book:
 
 def update_book(db: Session, book: Book, book_in: BookUpdate) -> Book:
     repo = BookRepository(db)
-    data = book_in.dict(exclude_unset=True, exclude={"author_ids"})
+    genre_repo = GenreRepository(db)
+    publisher_repo = PublisherRepository(db)
+    author_repo = AuthorRepository(db)
 
+    data = book_in.model_dump(
+        exclude_unset=True,
+        exclude={"author_ids", "author_names", "genre_name", "publisher_name"},
+    )
+
+    # жанр: либо по id, либо создаём/находим по названию
+    genre_id = None
+    if "genre_id" in book_in.model_fields_set:
+        genre_id = book_in.genre_id
+    if book_in.genre_name is not None:
+        genre_name = book_in.genre_name.strip()
+        if genre_name:
+            genre = genre_repo.get_by_name(genre_name)
+            if not genre:
+                genre = genre_repo.create({"name": genre_name})
+            genre_id = genre.genre_id
+        else:
+            genre_id = None
+    if "genre_id" in book_in.model_fields_set or book_in.genre_name is not None:
+        data["genre_id"] = genre_id
+
+    # издательство: по id или названию
+    publisher_id = None
+    if "publisher_id" in book_in.model_fields_set:
+        publisher_id = book_in.publisher_id
+    if book_in.publisher_name is not None:
+        publisher_name = book_in.publisher_name.strip()
+        if publisher_name:
+            publisher = publisher_repo.get_by_name(publisher_name)
+            if not publisher:
+                publisher = publisher_repo.create({"name": publisher_name})
+            publisher_id = publisher.publisher_id
+        else:
+            publisher_id = None
+    if "publisher_id" in book_in.model_fields_set or book_in.publisher_name is not None:
+        data["publisher_id"] = publisher_id
+
+    # остальные поля
     if data:
         book = repo.update_book(book, data)
 
-    # если передан список author_ids — обновляем связи
+    # авторы: по id или по списку имён
+    new_author_ids = None
     if book_in.author_ids is not None:
-        from app.models import Author  # локальный импорт, чтобы избежать циклов
+        new_author_ids = list(book_in.author_ids)
+    elif book_in.author_names is not None:
+        new_author_ids = []
+        for name in book_in.author_names:
+            clean_name = name.strip()
+            if not clean_name:
+                continue
+            author = author_repo.get_by_name(clean_name)
+            if not author:
+                author = author_repo.create({"full_name": clean_name})
+            new_author_ids.append(author.author_id)
 
+    if new_author_ids is not None:
         authors = (
             db.query(Author)
-            .filter(Author.author_id.in_(book_in.author_ids))
+            .filter(Author.author_id.in_(new_author_ids))
             .all()
         )
         book.authors = authors
