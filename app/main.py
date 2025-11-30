@@ -54,4 +54,14 @@ def admin_page(request: Request):
     return templates.TemplateResponse("admin/index.html", {"request": request})
 
 
+@app.get("/orders", response_class=HTMLResponse, include_in_schema=False)
+def orders_page(request: Request):
+    return templates.TemplateResponse("orders.html", {"request": request})
+
+
+@app.get("/profile", response_class=HTMLResponse, include_in_schema=False)
+def profile_page(request: Request):
+    return templates.TemplateResponse("profile.html", {"request": request})
+
+
 app.include_router(api_router, prefix="/api")

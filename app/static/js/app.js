@@ -418,6 +418,84 @@ function initRegisterPage() {
     });
 }
 
+// --- Страница "Мои заказы" ---
+
+async function initOrdersPage() {
+    const container = document.getElementById("orders-content");
+    if (!container) return;
+
+    container.textContent = "Загрузка заказов...";
+
+    try {
+        const orders = await apiFetch("/orders");
+        if (!orders.length) {
+            container.innerHTML = "<p>У вас пока нет заказов</p>";
+            return;
+        }
+
+        let html = `<table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Дата</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+        `;
+
+        orders.forEach((o) => {
+            const date = new Date(o.created_at);
+            const dateStr = date.toLocaleString();
+            html += `
+                <tr>
+                    <td>${o.order_id}</td>
+                    <td>${dateStr}</td>
+                    <td>${o.total_amount} ₽</td>
+                    <td>${o.status}</td>
+                </tr>
+            `;
+        });
+
+        html += "</tbody></table>";
+        container.innerHTML = html;
+    } catch (e) {
+        container.innerHTML = `<p class="message message_error">${e.message}</p>`;
+    }
+}
+
+
+// --- Страница "Профиль" ---
+
+async function initProfilePage() {
+    const container = document.getElementById("profile-content");
+    if (!container) return;
+
+    container.textContent = "Загрузка профиля...";
+
+    try {
+        const me = await apiFetch("/auth/me");
+
+        const role = me.is_admin ? "Администратор" : "Покупатель";
+
+        container.innerHTML = `
+            <div class="profile-card">
+                <p><strong>Email:</strong> ${me.email}</p>
+                <p><strong>Имя:</strong> ${me.full_name}</p>
+                <p><strong>Телефон:</strong> ${me.phone || "-"}</p>
+                <p><strong>Роль:</strong> ${role}</p>
+            </div>
+        `;
+    } catch (e) {
+        container.innerHTML = `<p class="message message_error">${e.message}</p>`;
+    }
+}
+
+
+
+
+
 // --- Админ-панель ---
 
 function initAdminPage() {
@@ -753,4 +831,6 @@ document.addEventListener("DOMContentLoaded", () => {
     initLoginPage();
     initRegisterPage();
     initAdminPage();
+    initOrdersPage();
+    initProfilePage();
 });
