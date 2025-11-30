@@ -417,9 +417,28 @@ async function initIndexPage() {
                         : "Не указан";
                 const genre = b.genre_name || "Не указан";
                 const publisher = b.publisher_name || "Не указано";
+                const descriptionText =
+                    b.description?.trim() || "Описание недоступно.";
+                const safeDescription = descriptionText.replace(/[&<>'"]/g, (ch) => {
+                    switch (ch) {
+                        case "&":
+                            return "&amp;";
+                        case "<":
+                            return "&lt;";
+                        case ">":
+                            return "&gt;";
+                        case '"':
+                            return "&quot;";
+                        case "'":
+                            return "&#39;";
+                        default:
+                            return ch;
+                    }
+                });
 
-                const card = document.createElement("div");
+                const card = document.createElement("a");
                 card.className = "card";
+                card.href = `/books/${b.book_id}`;
                 card.setAttribute("role", "listitem");
                 card.setAttribute("aria-label", `${b.title}. Цена ${b.price} ₽`);
 
@@ -443,14 +462,11 @@ async function initIndexPage() {
                                     <p class="card__detail"><strong>Издательство:</strong> ${publisher}</p>
                                 </div>
                             </div>
-                            <p class="card__hint">Перейдите в карточку, чтобы прочитать описание и добавить книгу в корзину.</p>
+                            <p class="card__description">${safeDescription}</p>
                         </div>
                     </div>
                     <div class="card__footer">
                         <div class="card__price">${b.price} ₽</div>
-                        <div class="card__actions">
-                            <a class="btn btn_secondary" href="/books/${b.book_id}">Подробнее</a>
-                        </div>
                     </div>
                 `;
                 listEl.appendChild(card);
