@@ -9,3 +9,4 @@ jinja2
 pytest
 httpx
 email-validator
+python-multipart

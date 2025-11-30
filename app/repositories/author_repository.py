@@ -14,5 +14,12 @@ class AuthorRepository(BaseRepository[Author]):
     def get_by_id(self, author_id: int) -> Optional[Author]:
         return self.get(author_id)
 
+    def get_by_name(self, full_name: str) -> Optional[Author]:
+        return (
+            self.db.query(Author)
+            .filter(Author.full_name == full_name)
+            .first()
+        )
+
     def list_all(self) -> List[Author]:
         return self.list()

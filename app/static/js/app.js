@@ -1037,6 +1037,42 @@ function initAdminPage() {
         });
     }
 
+    async function updateBookFormOptions() {
+        const genreList = document.getElementById("admin-genre-options");
+        const authorList = document.getElementById("admin-author-options");
+        const publisherList = document.getElementById("admin-publisher-options");
+
+        if (!genreList && !authorList && !publisherList) return;
+
+        try {
+            const [genres, authors, publishers] = await Promise.all([
+                apiFetch("/admin/genres"),
+                apiFetch("/admin/authors"),
+                apiFetch("/admin/publishers"),
+            ]);
+
+            if (genreList) {
+                genreList.innerHTML = genres
+                    .map((g) => `<option value="${g.name}"></option>`)
+                    .join("");
+            }
+
+            if (authorList) {
+                authorList.innerHTML = authors
+                    .map((a) => `<option value="${a.full_name}"></option>`)
+                    .join("");
+            }
+
+            if (publisherList) {
+                publisherList.innerHTML = publishers
+                    .map((p) => `<option value="${p.name}"></option>`)
+                    .join("");
+            }
+        } catch (e) {
+            console.warn("Не удалось обновить списки для формы книги", e);
+        }
+    }
+
     async function loadBooks() {
         const el = document.getElementById("admin-books-list");
         el.innerHTML = "Загрузка...";
@@ -1457,7 +1493,10 @@ function initAdminPage() {
         btn.addEventListener("click", (e) => {
             const name = e.target.getAttribute("data-section");
             switchSection(name);
-            if (name === "books") loadBooks();
+            if (name === "books") {
+                loadBooks();
+                updateBookFormOptions();
+            }
             if (name === "orders") loadOrders();
             if (name === "users") loadUsers();
             if (name === "genres") loadGenres();
@@ -1477,6 +1516,17 @@ function initAdminPage() {
         const fd = new FormData(createForm);
         const coverFile = fd.get("cover");
 
+        const genreName = fd.get("genre_name")?.toString().trim() || null;
+        const publisherName = fd.get("publisher_name")?.toString().trim() || null;
+        const authorNamesRaw = fd.get("author_names");
+        const authorNames = authorNamesRaw
+            ? authorNamesRaw
+                  .toString()
+                  .split(",")
+                  .map((n) => n.trim())
+                  .filter(Boolean)
+            : [];
+
         const payload = {
             title: fd.get("title"),
             price: Number(fd.get("price")),
@@ -1487,8 +1537,11 @@ function initAdminPage() {
             description: null,
             isbn: null,
             genre_id: null,
+            genre_name: genreName,
             publisher_id: null,
+            publisher_name: publisherName,
             author_ids: [],
+            author_names: authorNames,
         };
 
         try {
@@ -1521,6 +1574,7 @@ function initAdminPage() {
             createMsg.textContent = "Книга создана";
             createForm.reset();
             await loadBooks();
+            await updateBookFormOptions();
         } catch (err) {
             createMsg.textContent = err.message;
             createMsg.classList.add("message_error");
@@ -1545,6 +1599,7 @@ function initAdminPage() {
             genreCreateMsg.textContent = "Жанр создан";
             genreCreateForm.reset();
             await loadGenres();
+            await updateBookFormOptions();
         } catch (err) {
             genreCreateMsg.textContent = err.message;
             genreCreateMsg.classList.add("message_error");
@@ -1569,6 +1624,7 @@ function initAdminPage() {
             authorCreateMsg.textContent = "Автор создан";
             authorCreateForm.reset();
             await loadAuthors();
+            await updateBookFormOptions();
         } catch (err) {
             authorCreateMsg.textContent = err.message;
             authorCreateMsg.classList.add("message_error");
@@ -1593,6 +1649,7 @@ function initAdminPage() {
             publisherCreateMsg.textContent = "Издательство создано";
             publisherCreateForm.reset();
             await loadPublishers();
+            await updateBookFormOptions();
         } catch (err) {
             publisherCreateMsg.textContent = err.message;
             publisherCreateMsg.classList.add("message_error");
@@ -1602,6 +1659,7 @@ function initAdminPage() {
     (async () => {
         const ok = await ensureAdmin();
         if (!ok) return;
+        await updateBookFormOptions();
         switchSection("books");
         await loadBooks();
     })();
