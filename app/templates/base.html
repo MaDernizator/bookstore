@@ -9,18 +9,68 @@
 <body>
 <header class="header">
     <div class="container header__content">
-        <a href="/" class="logo">Bookstore</a>
-        <nav class="nav">
-            <a href="/" class="nav__link">Каталог</a>
-            <a href="/cart" class="nav__link">Корзина</a>
-            <a href="/orders" class="nav__link">Мои заказы</a>
-            <a href="/profile" class="nav__link">Профиль</a>
-            <a href="/admin" class="nav__link">Админ-панель</a>
-            <a href="/login" class="nav__link" id="nav-login-link">Войти</a>
-            <a href="/register" class="nav__link" id="nav-register-link">Регистрация</a>
-        </nav>
+        <div class="header__brand">
+            <button class="header__burger" id="header-burger" aria-label="Открыть меню" aria-expanded="false"
+                    aria-controls="mobile-drawer" type="button">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <a href="/" class="logo">Bookstore</a>
+        </div>
+
+        <form class="header__search js-header-search" id="header-search-form" role="search">
+            <input type="search" id="header-search-input" name="q" data-search-input placeholder="Искать книгу или автора" aria-label="Поиск по каталогу">
+            <button type="submit" class="header__search-btn">Поиск</button>
+        </form>
+
+        <div class="header__actions">
+            <nav class="header__nav">
+                <a href="/" class="nav__link">Каталог</a>
+                <a href="/orders" class="nav__link">Мои заказы</a>
+                <a href="/admin" class="nav__link">Админ-панель</a>
+            </nav>
+
+            <div class="header__cta">
+                <a href="/cart" class="header__pill header__pill_secondary">Корзина</a>
+                <a href="/profile" class="header__pill header__pill_primary">Профиль</a>
+                <a href="/login" class="nav__link nav__auth" data-auth="login" id="nav-login-link">Войти</a>
+                <a href="/register" class="nav__link nav__auth" data-auth="register" id="nav-register-link">Регистрация</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="header__drawer" id="mobile-drawer" aria-hidden="true">
+        <div class="header__drawer-content">
+            <div class="header__drawer-top">
+                <a href="/" class="logo">Bookstore</a>
+                <button class="drawer__close" type="button" aria-label="Закрыть меню">✕</button>
+            </div>
+
+            <form class="header__search header__search_mobile js-header-search" role="search">
+                <input type="search" name="q" data-search-input placeholder="Искать книгу или автора" aria-label="Поиск по каталогу">
+                <button type="submit" class="header__search-btn">Поиск</button>
+            </form>
+
+            <nav class="drawer__nav">
+                <a href="/" class="nav__link">Каталог</a>
+                <a href="/orders" class="nav__link">Мои заказы</a>
+                <a href="/admin" class="nav__link">Админ-панель</a>
+            </nav>
+
+            <div class="drawer__cta">
+                <a href="/cart" class="header__pill header__pill_secondary">Корзина</a>
+                <a href="/profile" class="header__pill header__pill_primary">Профиль</a>
+            </div>
+
+            <div class="drawer__auth">
+                <a href="/login" class="nav__link nav__auth" data-auth="login">Войти</a>
+                <a href="/register" class="nav__link nav__auth" data-auth="register">Регистрация</a>
+            </div>
+        </div>
     </div>
 </header>
+<div class="drawer__overlay" id="mobile-drawer-overlay"></div>
 
 <main class="container main">
     {% block content %}{% endblock %}

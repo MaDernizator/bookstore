@@ -54,26 +54,86 @@ async function apiFetch(path, options = {}) {
 
 function updateNavAuthState() {
     const token = getToken();
-    const loginLink = document.getElementById("nav-login-link");
-    const registerLink = document.getElementById("nav-register-link");
+    const loginLinks = document.querySelectorAll('[data-auth="login"]');
+    const registerLinks = document.querySelectorAll('[data-auth="register"]');
 
-    if (!loginLink || !registerLink) return;
+    loginLinks.forEach((link) => {
+        if (token) {
+            link.textContent = "Выйти";
+            link.href = "#";
+            link.onclick = (e) => {
+                e.preventDefault();
+                setToken(null);
+                window.location.href = "/";
+            };
+        } else {
+            link.textContent = "Войти";
+            link.href = "/login";
+            link.onclick = null;
+        }
+    });
 
-    if (token) {
-        loginLink.textContent = "Выйти";
-        loginLink.href = "#";
-        loginLink.onclick = (e) => {
+    registerLinks.forEach((link) => {
+        if (token) {
+            link.style.display = "none";
+        } else {
+            link.style.display = "";
+        }
+    });
+}
+
+function initHeaderSearch() {
+    const searchForms = document.querySelectorAll(".js-header-search");
+    if (!searchForms.length) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const qParam = params.get("q") || "";
+
+    searchForms.forEach((form) => {
+        const input = form.querySelector("[data-search-input]");
+        if (!input) return;
+
+        input.value = qParam;
+
+        form.addEventListener("submit", (e) => {
             e.preventDefault();
-            setToken(null);
-            window.location.href = "/";
-        };
-        registerLink.style.display = "none";
-    } else {
-        loginLink.textContent = "Войти";
-        loginLink.href = "/login";
-        loginLink.onclick = null;
-        registerLink.style.display = "inline-block";
-    }
+            const query = input.value.trim();
+            const url = query ? `/?q=${encodeURIComponent(query)}` : "/";
+            window.location.href = url;
+        });
+    });
+}
+
+function initMobileNavigation() {
+    const burger = document.getElementById("header-burger");
+    const drawer = document.getElementById("mobile-drawer");
+    const overlay = document.getElementById("mobile-drawer-overlay");
+    const closeBtn = drawer?.querySelector(".drawer__close");
+
+    if (!burger || !drawer || !overlay) return;
+
+    const toggleMenu = (open) => {
+        const shouldOpen = open ?? !drawer.classList.contains("is-open");
+        drawer.classList.toggle("is-open", shouldOpen);
+        overlay.classList.toggle("is-visible", shouldOpen);
+        document.body.classList.toggle("drawer-open", shouldOpen);
+        burger.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+        drawer.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+    };
+
+    burger.addEventListener("click", () => toggleMenu());
+    overlay.addEventListener("click", () => toggleMenu(false));
+    closeBtn?.addEventListener("click", () => toggleMenu(false));
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && drawer.classList.contains("is-open")) {
+            toggleMenu(false);
+        }
+    });
+
+    drawer.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", () => toggleMenu(false));
+    });
 }
 
 // --- Страница каталога ---
@@ -103,6 +163,12 @@ async function initIndexPage() {
     const PAGE_SIZE = 10;
     let currentPage = 1;
     let hasMore = false;
+
+    const params = new URLSearchParams(window.location.search);
+    const initialQuery = params.get("q");
+    if (initialQuery !== null && searchInput) {
+        searchInput.value = initialQuery;
+    }
 
     function updatePagination() {
         if (!pagePrev || !pageNext || !pageInfo) return;
@@ -915,6 +981,8 @@ createForm.addEventListener("submit", async (e) => {
 
 document.addEventListener("DOMContentLoaded", () => {
     updateNavAuthState();
+    initHeaderSearch();
+    initMobileNavigation();
     initIndexPage();
     initBookDetailPage();
     initCartPage();
