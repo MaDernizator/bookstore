@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
+<a href="#main-content" class="skip-link">Перейти к основному содержимому</a>
 <header class="header">
     <div class="container header__content">
         <div class="header__brand">
@@ -19,13 +20,13 @@
             <a href="/" class="logo">Bookstore</a>
         </div>
 
-        <form class="header__search js-header-search" id="header-search-form" role="search">
+        <form class="header__search js-header-search" id="header-search-form" role="search" aria-label="Поиск по каталогу">
             <input type="search" id="header-search-input" name="q" data-search-input placeholder="Искать книгу или автора" aria-label="Поиск по каталогу">
             <button type="submit" class="header__search-btn">Поиск</button>
         </form>
 
         <div class="header__actions">
-            <nav class="header__nav">
+            <nav class="header__nav" aria-label="Основная навигация">
                 <a href="/" class="nav__link">Каталог</a>
                 <a href="/orders" class="nav__link">Мои заказы</a>
                 <a href="/admin" class="nav__link">Админ-панель</a>
@@ -40,19 +41,20 @@
         </div>
     </div>
 
-    <div class="header__drawer" id="mobile-drawer" aria-hidden="true">
+    <div class="header__drawer" id="mobile-drawer" aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="mobile-drawer-title">
         <div class="header__drawer-content">
             <div class="header__drawer-top">
                 <a href="/" class="logo">Bookstore</a>
+                <span class="sr-only" id="mobile-drawer-title">Меню навигации</span>
                 <button class="drawer__close" type="button" aria-label="Закрыть меню">✕</button>
             </div>
 
-            <form class="header__search header__search_mobile js-header-search" role="search">
+            <form class="header__search header__search_mobile js-header-search" role="search" aria-label="Поиск по каталогу">
                 <input type="search" name="q" data-search-input placeholder="Искать книгу или автора" aria-label="Поиск по каталогу">
                 <button type="submit" class="header__search-btn">Поиск</button>
             </form>
 
-            <nav class="drawer__nav">
+            <nav class="drawer__nav" aria-label="Навигация по разделам">
                 <a href="/" class="nav__link">Каталог</a>
                 <a href="/orders" class="nav__link">Мои заказы</a>
                 <a href="/admin" class="nav__link">Админ-панель</a>
@@ -72,7 +74,7 @@
 </header>
 <div class="drawer__overlay" id="mobile-drawer-overlay"></div>
 
-<main class="container main">
+<main class="container main" id="main-content">
     {% block content %}{% endblock %}
 </main>
 

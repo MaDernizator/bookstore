@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Каталог книг</h1>
+<h1 id="catalog-title">Каталог книг</h1>
 
-<div class="catalog-filters">
+<section class="catalog-filters" aria-labelledby="filters-heading">
+    <h2 id="filters-heading" class="sr-only">Фильтры каталога</h2>
     <div class="catalog-filters__top">
         <div class="catalog-filters__intro">
             <p class="catalog-filters__title">Найдите нужную книгу по ключевым словам и параметрам.</p>
@@ -27,7 +28,7 @@
         </div>
     </div>
 
-    <div class="catalog-filters__body" id="filters-collapse">
+    <div class="catalog-filters__body" id="filters-collapse" aria-live="polite">
         <div class="filter-grid">
             <label class="filter-field">
                 <span class="filter-field__label">Жанр</span>
@@ -99,14 +100,16 @@
             </div>
         </div>
     </div>
-</div>
+    <div class="sr-only" aria-live="polite" id="active-filters-announcer"></div>
+</section>
 
-<div id="books-empty-state" class="empty-state" hidden></div>
-<div id="books-list" class="cards"></div>
+<div id="books-empty-state" class="empty-state" hidden role="status" aria-live="polite"></div>
+<section id="books-list" class="cards" aria-label="Результаты поиска книг" role="list"></section>
 
-<div class="pagination">
-    <button id="page-prev">« Назад</button>
-    <span id="page-info">Страница 1</span>
-    <button id="page-next">Вперёд »</button>
-</div>
+<nav class="pagination" aria-label="Навигация по страницам">
+    <button id="page-prev" aria-label="Предыдущая страница">« Назад</button>
+    <span id="page-info" aria-live="polite">Страница 1</span>
+    <button id="page-next" aria-label="Следующая страница">Вперёд »</button>
+    <div class="sr-only" id="page-status" aria-live="polite"></div>
+</nav>
 {% endblock %}
