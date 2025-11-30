@@ -11,7 +11,11 @@ from app.models import User
 from app.repositories import UserRepository
 from app.schemas.auth import TokenData
 
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256", "bcrypt"],
+    deprecated="auto",
+    default="pbkdf2_sha256",
+)
 
 
 # --- Работа с паролем ---
