@@ -28,3 +28,15 @@ class Book(Base):
         secondary="book_authors",
         backref="books",
     )
+
+    @property
+    def genre_name(self):
+        return self.genre.name if self.genre else None
+
+    @property
+    def publisher_name(self):
+        return self.publisher.name if self.publisher else None
+
+    @property
+    def author_names(self):
+        return [author.full_name for author in self.authors] if self.authors else []
