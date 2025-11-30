@@ -21,8 +21,8 @@ def test_register_and_login_and_me(client: TestClient):
     # логин
     resp = client.post(
         "/api/auth/login",
-        data={
-            "username": "user1@example.com",
+        json={
+            "email": "user1@example.com",
             "password": "qwerty123",
         },
     )

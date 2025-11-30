@@ -1,3 +1,3 @@
-from . import auth, books, cart, orders, admin, dicts
+from . import auth, books, cart, orders, admin, dicts, users
 
-__all__ = ["auth", "books", "cart", "orders", "admin", "dicts"]
+__all__ = ["auth", "books", "cart", "orders", "admin", "dicts", "users"]

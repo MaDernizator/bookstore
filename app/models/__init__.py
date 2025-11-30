@@ -7,6 +7,7 @@ from .book import Book
 from .book_author import BookAuthor
 from .cart import Cart, CartItem
 from .order import Order, OrderItem
+from .address import Address
 
 __all__ = [
     "Base",
@@ -20,4 +21,5 @@ __all__ = [
     "CartItem",
     "Order",
     "OrderItem",
+    "Address",
 ]

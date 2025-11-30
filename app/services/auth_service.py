@@ -11,7 +11,7 @@ from app.models import User
 from app.repositories import UserRepository
 from app.schemas.auth import TokenData
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
 # --- Работа с паролем ---
@@ -22,8 +22,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
-    print("DEBUG password:", repr(password))
-    print("DEBUG length (bytes):", len(password.encode("utf-8")))
     return pwd_context.hash(password)
 
 
