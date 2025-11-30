@@ -1122,17 +1122,20 @@ async function initProfilePage() {
         }
     };
 
+    const fillProfileForm = () => {
+        if (!profileForm || !profile) return;
+        profileForm.elements.full_name.value = profile.full_name || "";
+        profileForm.elements.email.value = profile.email || "";
+        profileForm.elements.phone.value = profile.phone || "";
+    };
+
     const loadProfile = async () => {
         try {
             profile = await apiFetch("/users/me");
             if (roleBadge) {
                 roleBadge.textContent = profile.is_admin ? "Администратор" : "Покупатель";
             }
-            if (profileForm) {
-                profileForm.elements.full_name.value = profile.full_name || "";
-                profileForm.elements.email.value = profile.email || "";
-                profileForm.elements.phone.value = profile.phone || "";
-            }
+            fillProfileForm();
         } catch (err) {
             setMessage(
                 profileFormMessage,
@@ -1166,6 +1169,7 @@ async function initProfilePage() {
                     method: "PUT",
                     body: JSON.stringify(payload),
                 });
+                fillProfileForm();
                 setMessage(profileFormMessage, "success", "Данные сохранены");
             } catch (err) {
                 setMessage(profileFormMessage, "error", err.message || "Не удалось сохранить профайл");
