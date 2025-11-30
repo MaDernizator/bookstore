@@ -1,6 +1,15 @@
 const API_BASE = "/api";
 const TOKEN_KEY = "bookstore_token";
 
+function debounce(fn, delay = 300) {
+    let timeoutId;
+
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+}
+
 function getToken() {
     return localStorage.getItem(TOKEN_KEY);
 }
@@ -148,6 +157,8 @@ async function initIndexPage() {
     const searchBtn = document.getElementById("search-btn");
     const resetBtn = document.getElementById("search-reset-btn");
 
+    const searchWrapper = document.querySelector("[data-search-wrapper]");
+
     const genreSelect = document.getElementById("filter-genre");
     const authorSelect = document.getElementById("filter-author");
     const minPriceInput = document.getElementById("filter-min-price");
@@ -155,6 +166,15 @@ async function initIndexPage() {
     const minYearInput = document.getElementById("filter-min-year");
     const maxYearInput = document.getElementById("filter-max-year");
     const orderSelect = document.getElementById("filter-order");
+
+    const quickNew = document.getElementById("filter-quick-new");
+    const quickBudget = document.getElementById("filter-quick-budget");
+    const quickPremium = document.getElementById("filter-quick-premium");
+    const quickClassic = document.getElementById("filter-quick-classic");
+
+    const filtersWrapper = document.querySelector(".catalog-filters");
+    const filtersToggle = document.getElementById("filters-toggle");
+    const emptyStateEl = document.getElementById("books-empty-state");
 
     const pagePrev = document.getElementById("page-prev");
     const pageNext = document.getElementById("page-next");
@@ -170,12 +190,115 @@ async function initIndexPage() {
         searchInput.value = initialQuery;
     }
 
+    const debouncedFilterChange = debounce(() => {
+        currentPage = 1;
+        loadBooks();
+    }, 280);
+
+    const debouncedSearchChange = debounce(() => {
+        currentPage = 1;
+        loadBooks();
+    }, 320);
+
+    const updateSearchState = () => {
+        if (!searchWrapper || !searchInput) return;
+        searchWrapper.classList.toggle("is-filled", !!searchInput.value.trim());
+    };
+
+    const toggleAccordion = () => {
+        if (!filtersWrapper || !filtersToggle) return;
+        const isOpen = filtersWrapper.classList.toggle("is-open");
+        filtersToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    };
+
+    filtersToggle?.addEventListener("click", () => toggleAccordion());
+
     function updatePagination() {
         if (!pagePrev || !pageNext || !pageInfo) return;
         pagePrev.disabled = currentPage <= 1;
         pageNext.disabled = !hasMore;
         pageInfo.textContent = `Страница ${currentPage}`;
     }
+
+    const describeActiveFilters = () => {
+        const active = [];
+        if (searchInput?.value.trim()) active.push(`по запросу «${searchInput.value.trim()}»`);
+        if (genreSelect?.value) {
+            const text = genreSelect.options[genreSelect.selectedIndex]?.textContent;
+            active.push(`жанр: ${text}`);
+        }
+        if (authorSelect?.value) {
+            const text = authorSelect.options[authorSelect.selectedIndex]?.textContent;
+            active.push(`автор: ${text}`);
+        }
+        if (minPriceInput?.value) active.push(`цена от ${minPriceInput.value} ₽`);
+        if (maxPriceInput?.value) active.push(`до ${maxPriceInput.value} ₽`);
+        if (minYearInput?.value) active.push(`год от ${minYearInput.value}`);
+        if (maxYearInput?.value) active.push(`до ${maxYearInput.value}`);
+        if (orderSelect?.value) active.push(`сортировка: ${orderSelect.options[orderSelect.selectedIndex]?.textContent}`);
+        return active;
+    };
+
+    const hideEmptyState = () => {
+        if (emptyStateEl) {
+            emptyStateEl.hidden = true;
+            emptyStateEl.innerHTML = "";
+        }
+    };
+
+    const showEmptyState = () => {
+        if (!emptyStateEl) return;
+        const active = describeActiveFilters();
+        const filtersText = active.length
+            ? `Применены фильтры: ${active.join(", ")}.`
+            : "Попробуйте изменить поисковый запрос или диапазон фильтров.";
+
+        emptyStateEl.innerHTML = `
+            <p class="empty-state__title">Ничего не найдено</p>
+            <p>Мы не нашли книг по выбранным условиям.</p>
+            <p class="empty-state__filters">${filtersText}</p>
+            <div>
+                <button class="btn btn_secondary" type="button" id="empty-reset-btn">Сбросить фильтры</button>
+            </div>
+        `;
+        emptyStateEl.hidden = false;
+
+        const emptyResetBtn = emptyStateEl.querySelector("#empty-reset-btn");
+        emptyResetBtn?.addEventListener("click", () => resetFilters());
+    };
+
+    const syncQuickFiltersWithInputs = () => {
+        if (quickNew && minYearInput) {
+            quickNew.checked = !!minYearInput.value && Number(minYearInput.value) >= 2015 && !maxYearInput?.value;
+        }
+        if (quickClassic && maxYearInput) {
+            quickClassic.checked = !!maxYearInput.value && Number(maxYearInput.value) <= 1990 && !minYearInput?.value;
+        }
+        if (quickBudget && maxPriceInput) {
+            quickBudget.checked = !!maxPriceInput.value && Number(maxPriceInput.value) === 500;
+        }
+        if (quickPremium && minPriceInput) {
+            quickPremium.checked = !!minPriceInput.value && Number(minPriceInput.value) === 1500;
+        }
+    };
+
+    const resetFilters = () => {
+        hideEmptyState();
+        if (searchInput) searchInput.value = "";
+        if (genreSelect) genreSelect.value = "";
+        if (authorSelect) authorSelect.value = "";
+        if (minPriceInput) minPriceInput.value = "";
+        if (maxPriceInput) maxPriceInput.value = "";
+        if (minYearInput) minYearInput.value = "";
+        if (maxYearInput) maxYearInput.value = "";
+        if (orderSelect) orderSelect.value = "";
+        [quickNew, quickBudget, quickPremium, quickClassic].forEach((cb) => {
+            if (cb) cb.checked = false;
+        });
+        updateSearchState();
+        currentPage = 1;
+        loadBooks();
+    };
 
     async function loadFilters() {
         try {
@@ -203,23 +326,24 @@ async function initIndexPage() {
     }
 
     async function loadBooks() {
-        listEl.innerHTML = "Загрузка...";
+        hideEmptyState();
+        listEl.innerHTML = '<p class="cards__loading">Загрузка...</p>';
 
         const params = new URLSearchParams();
 
-        const q = searchInput.value.trim();
+        const q = searchInput?.value.trim() || "";
         if (q) params.append("q", q);
 
-        if (genreSelect.value) params.append("genre_id", genreSelect.value);
-        if (authorSelect.value) params.append("author_id", authorSelect.value);
+        if (genreSelect?.value) params.append("genre_id", genreSelect.value);
+        if (authorSelect?.value) params.append("author_id", authorSelect.value);
 
-        if (minPriceInput.value) params.append("min_price", minPriceInput.value);
-        if (maxPriceInput.value) params.append("max_price", maxPriceInput.value);
+        if (minPriceInput?.value) params.append("min_price", minPriceInput.value);
+        if (maxPriceInput?.value) params.append("max_price", maxPriceInput.value);
 
-        if (minYearInput.value) params.append("min_year", minYearInput.value);
-        if (maxYearInput.value) params.append("max_year", maxYearInput.value);
+        if (minYearInput?.value) params.append("min_year", minYearInput.value);
+        if (maxYearInput?.value) params.append("max_year", maxYearInput.value);
 
-        if (orderSelect.value) params.append("order_by", orderSelect.value);
+        if (orderSelect?.value) params.append("order_by", orderSelect.value);
 
         // пагинация
         params.append("skip", (currentPage - 1) * PAGE_SIZE);
@@ -233,10 +357,12 @@ async function initIndexPage() {
             updatePagination();
 
             if (!books.length) {
-                listEl.innerHTML = "<p>Книг не найдено</p>";
+                listEl.innerHTML = "";
+                showEmptyState();
                 return;
             }
 
+            hideEmptyState();
             listEl.innerHTML = "";
             books.forEach((b) => {
                 const card = document.createElement("div");
@@ -275,32 +401,104 @@ async function initIndexPage() {
     }
 
     // поиск
-    searchBtn.addEventListener("click", () => {
+    searchBtn?.addEventListener("click", () => {
         currentPage = 1;
         loadBooks();
+    });
+
+    searchInput?.addEventListener("input", () => {
+        updateSearchState();
+        debouncedSearchChange();
     });
 
     // сброс
-    resetBtn.addEventListener("click", () => {
-        searchInput.value = "";
-        genreSelect.value = "";
-        authorSelect.value = "";
-        minPriceInput.value = "";
-        maxPriceInput.value = "";
-        minYearInput.value = "";
-        maxYearInput.value = "";
-        orderSelect.value = "";
-        currentPage = 1;
-        loadBooks();
-    });
+    resetBtn?.addEventListener("click", () => resetFilters());
 
     // По Enter в строке поиска
-    searchInput.addEventListener("keydown", (e) => {
+    searchInput?.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
             currentPage = 1;
             loadBooks();
         }
+    });
+
+    const filterInputs = [
+        genreSelect,
+        authorSelect,
+        minPriceInput,
+        maxPriceInput,
+        minYearInput,
+        maxYearInput,
+        orderSelect,
+    ].filter(Boolean);
+
+    filterInputs.forEach((input) => {
+        const eventName = input.tagName === "SELECT" ? "change" : "input";
+        input.addEventListener(eventName, () => {
+            syncQuickFiltersWithInputs();
+            debouncedFilterChange();
+        });
+    });
+
+    const quickFilterHandlers = [
+        {
+            el: quickNew,
+            apply: () => {
+                if (!minYearInput) return;
+                if (quickNew.checked) {
+                    if (quickClassic) quickClassic.checked = false;
+                    minYearInput.value = "2015";
+                    if (maxYearInput) maxYearInput.value = "";
+                } else if (minYearInput.value === "2015") {
+                    minYearInput.value = "";
+                }
+            },
+        },
+        {
+            el: quickClassic,
+            apply: () => {
+                if (!maxYearInput) return;
+                if (quickClassic.checked) {
+                    if (quickNew) quickNew.checked = false;
+                    maxYearInput.value = "1990";
+                    if (minYearInput) minYearInput.value = "";
+                } else if (maxYearInput.value === "1990") {
+                    maxYearInput.value = "";
+                }
+            },
+        },
+        {
+            el: quickBudget,
+            apply: () => {
+                if (!maxPriceInput) return;
+                if (quickBudget.checked) {
+                    if (quickPremium) quickPremium.checked = false;
+                    maxPriceInput.value = "500";
+                } else if (maxPriceInput.value === "500") {
+                    maxPriceInput.value = "";
+                }
+            },
+        },
+        {
+            el: quickPremium,
+            apply: () => {
+                if (!minPriceInput) return;
+                if (quickPremium.checked) {
+                    if (quickBudget) quickBudget.checked = false;
+                    minPriceInput.value = "1500";
+                } else if (minPriceInput.value === "1500") {
+                    minPriceInput.value = "";
+                }
+            },
+        },
+    ];
+
+    quickFilterHandlers.forEach(({ el, apply }) => {
+        el?.addEventListener("change", () => {
+            apply();
+            debouncedFilterChange();
+        });
     });
 
     // кнопки пагинации
@@ -322,6 +520,8 @@ async function initIndexPage() {
         });
     }
 
+    updateSearchState();
+    syncQuickFiltersWithInputs();
     await loadFilters();
     await loadBooks();
 }

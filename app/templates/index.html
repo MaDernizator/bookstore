@@ -3,66 +3,105 @@
 {% block content %}
 <h1>Каталог книг</h1>
 
-<div class="search">
-    <div class="search__row">
-        <input type="text" id="search-input" placeholder="Поиск по названию">
-        <button id="search-btn">Искать</button>
+<div class="catalog-filters">
+    <div class="catalog-filters__top">
+        <div class="catalog-filters__intro">
+            <p class="catalog-filters__title">Найдите нужную книгу по ключевым словам и параметрам.</p>
+            <p class="catalog-filters__hint">Фильтры работают сразу: изменяйте значения, и результаты обновятся автоматически.</p>
+        </div>
+        <div class="catalog-filters__actions">
+            <button id="filters-toggle" class="btn btn_secondary catalog-filters__toggle" type="button" aria-expanded="false" aria-controls="filters-collapse">Фильтры</button>
+            <button id="search-reset-btn" class="btn btn_ghost">Сбросить</button>
+        </div>
     </div>
 
-    <div class="search__row">
-        <label>
-            Жанр:
-            <select id="filter-genre">
-                <option value="">Все</option>
-            </select>
-        </label>
-
-        <label>
-            Автор:
-            <select id="filter-author">
-                <option value="">Все</option>
-            </select>
-        </label>
-
-        <label>
-            Цена от:
-            <input type="number" id="filter-min-price" min="0">
-        </label>
-
-        <label>
-            до:
-            <input type="number" id="filter-max-price" min="0">
-        </label>
+    <div class="catalog-filters__search">
+        <div class="search-input" data-search-wrapper>
+            <span class="search-input__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M15.5 14h-.79l-.28-.27a6.471 6.471 0 0 0 1.57-4.23A6.5 6.5 0 1 0 9.5 15c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l4.25 4.25a1 1 0 0 0 1.42-1.42L15.5 14Zm-6 0a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z" />
+                </svg>
+            </span>
+            <input type="text" id="search-input" placeholder="Название, автор или ключевое слово" aria-label="Поиск по каталогу">
+            <button id="search-btn" class="btn btn_secondary search-input__submit" type="button">Искать</button>
+        </div>
     </div>
 
-    <div class="search__row">
-        <label>
-            Год от:
-            <input type="number" id="filter-min-year">
-        </label>
+    <div class="catalog-filters__body" id="filters-collapse">
+        <div class="filter-grid">
+            <label class="filter-field">
+                <span class="filter-field__label">Жанр</span>
+                <select id="filter-genre">
+                    <option value="">Все жанры</option>
+                </select>
+            </label>
 
-        <label>
-            до:
-            <input type="number" id="filter-max-year">
-        </label>
+            <label class="filter-field">
+                <span class="filter-field__label">Автор</span>
+                <select id="filter-author">
+                    <option value="">Все авторы</option>
+                </select>
+            </label>
 
-        <label>
-            Сортировка:
-            <select id="filter-order">
-                <option value="">По умолчанию</option>
-                <option value="price_asc">Цена по возрастанию</option>
-                <option value="price_desc">Цена по убыванию</option>
-                <option value="year_desc">Сначала новые</option>
-                <option value="year_asc">Сначала старые</option>
-                <option value="title_asc">Название A→Я</option>
-                <option value="title_desc">Название Я→A</option>
-            </select>
-        </label>
+            <label class="filter-field">
+                <span class="filter-field__label">Цена от</span>
+                <input type="number" id="filter-min-price" min="0" placeholder="0">
+            </label>
 
-        <button id="search-reset-btn">Сбросить</button>
+            <label class="filter-field">
+                <span class="filter-field__label">до</span>
+                <input type="number" id="filter-max-price" min="0" placeholder="3000">
+            </label>
+        </div>
+
+        <div class="filter-grid">
+            <label class="filter-field">
+                <span class="filter-field__label">Год от</span>
+                <input type="number" id="filter-min-year" placeholder="2000">
+            </label>
+
+            <label class="filter-field">
+                <span class="filter-field__label">до</span>
+                <input type="number" id="filter-max-year" placeholder="2024">
+            </label>
+
+            <label class="filter-field">
+                <span class="filter-field__label">Сортировка</span>
+                <select id="filter-order">
+                    <option value="">По умолчанию</option>
+                    <option value="price_asc">Цена по возрастанию</option>
+                    <option value="price_desc">Цена по убыванию</option>
+                    <option value="year_desc">Сначала новые</option>
+                    <option value="year_asc">Сначала старые</option>
+                    <option value="title_asc">Название A→Я</option>
+                    <option value="title_desc">Название Я→A</option>
+                </select>
+            </label>
+
+            <div class="filter-quick">
+                <span class="filter-quick__label">Быстрые фильтры</span>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filter-quick-new">
+                    <span>Новинки после 2015</span>
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filter-quick-budget">
+                    <span>Бюджетные до 500 ₽</span>
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filter-quick-premium">
+                    <span>Коллекционные от 1500 ₽</span>
+                </label>
+                <label class="filter-checkbox">
+                    <input type="checkbox" id="filter-quick-classic">
+                    <span>Классика до 1990</span>
+                </label>
+            </div>
+        </div>
     </div>
 </div>
 
+<div id="books-empty-state" class="empty-state" hidden></div>
 <div id="books-list" class="cards"></div>
 
 <div class="pagination">
