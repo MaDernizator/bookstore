@@ -1,8 +1,121 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Профиль</h1>
-<div id="profile-content">
-    Загрузка профиля...
+<h1 class="page-heading">Мой профиль</h1>
+<div class="profile-grid" id="profile-content">
+    <section class="panel" aria-labelledby="profile-info-title">
+        <div class="panel__header">
+            <div>
+                <h2 class="panel__title" id="profile-info-title">Личные данные</h2>
+                <p class="panel__subtitle">Обновите имя, email и телефон</p>
+            </div>
+            <span class="badge" id="profile-role"></span>
+        </div>
+        <form class="form" id="profile-form" novalidate>
+            <label class="form__field">
+                <span class="form__label">Имя и фамилия</span>
+                <input class="input" type="text" name="full_name" autocomplete="name" required>
+                <span class="form__error" data-error-for="full_name"></span>
+            </label>
+            <label class="form__field">
+                <span class="form__label">Email</span>
+                <input class="input" type="email" name="email" autocomplete="email" required>
+                <span class="form__error" data-error-for="email"></span>
+            </label>
+            <label class="form__field">
+                <span class="form__label">Телефон</span>
+                <input class="input" type="tel" name="phone" autocomplete="tel">
+                <span class="form__error" data-error-for="phone"></span>
+            </label>
+            <div class="form__footer">
+                <p class="form__message" id="profile-form-message"></p>
+                <button type="submit" class="btn btn_primary">Сохранить</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel" aria-labelledby="password-title">
+        <div class="panel__header">
+            <div>
+                <h2 class="panel__title" id="password-title">Сменить пароль</h2>
+                <p class="panel__subtitle">Новый пароль должен быть сложным</p>
+            </div>
+        </div>
+        <form class="form" id="password-form" novalidate>
+            <label class="form__field">
+                <span class="form__label">Текущий пароль</span>
+                <input class="input" type="password" name="current_password" autocomplete="current-password" required>
+                <span class="form__error" data-error-for="current_password"></span>
+            </label>
+            <label class="form__field">
+                <span class="form__label">Новый пароль</span>
+                <input class="input" type="password" name="new_password" autocomplete="new-password" required>
+                <span class="form__error" data-error-for="new_password"></span>
+            </label>
+            <label class="form__field">
+                <span class="form__label">Подтверждение</span>
+                <input class="input" type="password" name="confirm_password" autocomplete="new-password" required>
+                <span class="form__error" data-error-for="confirm_password"></span>
+            </label>
+            <div class="form__footer">
+                <p class="form__message" id="password-form-message"></p>
+                <button type="submit" class="btn">Обновить пароль</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel" aria-labelledby="addresses-title">
+        <div class="panel__header">
+            <div>
+                <h2 class="panel__title" id="addresses-title">Адреса доставки</h2>
+                <p class="panel__subtitle">Сохранённые адреса и адрес по умолчанию</p>
+            </div>
+            <button class="btn btn_secondary" type="button" id="address-add-btn">Добавить адрес</button>
+        </div>
+        <div id="addresses-list" class="address-list" aria-live="polite"></div>
+        <p class="form__message" id="addresses-message"></p>
+    </section>
+</div>
+
+<div class="modal" id="address-modal" aria-hidden="true" role="dialog" aria-labelledby="address-modal-title">
+    <div class="modal__overlay" data-close-modal></div>
+    <div class="modal__content">
+        <div class="modal__header">
+            <h3 class="modal__title" id="address-modal-title">Новый адрес</h3>
+            <button class="modal__close" type="button" aria-label="Закрыть" data-close-modal>×</button>
+        </div>
+        <form class="form" id="address-form" novalidate>
+            <label class="form__field">
+                <span class="form__label">Город</span>
+                <input class="input" type="text" name="city" required>
+                <span class="form__error" data-error-for="city"></span>
+            </label>
+            <label class="form__field">
+                <span class="form__label">Улица</span>
+                <input class="input" type="text" name="street" required>
+                <span class="form__error" data-error-for="street"></span>
+            </label>
+            <label class="form__field">
+                <span class="form__label">Дом / квартира</span>
+                <input class="input" type="text" name="house" required>
+                <span class="form__error" data-error-for="house"></span>
+            </label>
+            <label class="form__field">
+                <span class="form__label">Индекс</span>
+                <input class="input" type="text" name="postal_code" required>
+                <span class="form__error" data-error-for="postal_code"></span>
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" name="is_default"> Сделать адресом по умолчанию
+            </label>
+            <div class="form__footer">
+                <p class="form__message" id="address-form-message"></p>
+                <div class="modal__actions">
+                    <button class="btn btn_secondary" type="button" data-close-modal>Отмена</button>
+                    <button class="btn btn_primary" type="submit">Сохранить</button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

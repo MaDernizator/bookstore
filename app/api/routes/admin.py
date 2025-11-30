@@ -1,8 +1,8 @@
 # app/api/routes/admin.py
+import base64
+import binascii
 import os
 import uuid
-
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,7 +16,7 @@ from app.schemas.admin import UserAdminRead, UserAdminUpdate, OrderStatusUpdate
 from app.schemas.order import OrderRead
 from app.services import admin_service
 
-from app.schemas.book import BookRead
+from app.schemas.book import BookRead, BookCoverUpload
 from app.repositories import BookRepository
 from app.models import Book
 from app.database import Base
@@ -227,7 +227,7 @@ def admin_update_order_status(
 @router.post("/books/{book_id}/cover", response_model=BookRead)
 async def admin_upload_book_cover(
         book_id: int,
-        file: UploadFile = File(...),
+        payload: BookCoverUpload,
         db: Session = Depends(get_db_session),
         admin=Depends(get_current_admin),
 ):
@@ -244,14 +244,22 @@ async def admin_upload_book_cover(
     covers_dir = os.path.join(BASE_DIR, "static", "covers")
     os.makedirs(covers_dir, exist_ok=True)
 
-    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    try:
+        file_bytes = base64.b64decode(payload.content)
+    except binascii.Error:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Некорректные данные файла")
+
+    max_size = 5 * 1024 * 1024
+    if len(file_bytes) > max_size:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Файл слишком большой")
+
+    ext = os.path.splitext(payload.filename or "")[1] or ".jpg"
     filename = f"book_{book_id}_{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(covers_dir, filename)
 
     # сохраняем файл
     with open(filepath, "wb") as f:
-        content = await file.read()
-        f.write(content)
+        f.write(file_bytes)
 
     # сохраняем путь в книгу
     book.cover_image = f"/static/covers/{filename}"

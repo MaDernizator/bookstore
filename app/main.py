@@ -7,8 +7,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .api.router import api_router
+from .database import engine
+from .models import Base
 
 app = FastAPI(title="Bookstore")
+
+# Ensure all database tables exist (create missing tables such as new Address)
+Base.metadata.create_all(bind=engine)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 

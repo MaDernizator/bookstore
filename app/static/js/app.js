@@ -825,6 +825,17 @@ const validators = {
             ? ""
             : "Телефон может содержать только цифры, скобки и дефисы";
     },
+    passwordComplexity: (value) => {
+        if (!value) return "";
+        const hasLength = value.length >= 8;
+        const hasLetter = /[A-Za-zА-Яа-яЁё]/.test(value);
+        const hasDigit = /\d/.test(value);
+        const hasSpecial = /[^\da-zA-ZА-Яа-яЁё]/.test(value);
+        return hasLength && hasLetter && hasDigit && hasSpecial
+            ? ""
+            : "Минимум 8 символов, буквы, цифры и спецсимвол";
+    },
+    matches: (getOther, message) => (value) => (value && value !== getOther() ? message : ""),
 };
 
 function setupFormValidation(form, rules, errorBox, handleSubmit) {
@@ -863,7 +874,7 @@ function setupFormValidation(form, rules, errorBox, handleSubmit) {
         e.preventDefault();
         if (errorBox) {
             errorBox.textContent = "";
-            errorBox.classList.remove("is-error");
+            errorBox.classList.remove("is-error", "is-success");
         }
 
         const isValid = Object.keys(rules).every((name) => validateField(name));
@@ -901,13 +912,13 @@ function initLoginPage() {
         errorEl,
         async () => {
             const formData = new FormData(form);
-            const body = new URLSearchParams();
-            body.append("username", formData.get("email"));
-            body.append("password", formData.get("password"));
-
             const response = await fetch(API_BASE + "/auth/login", {
                 method: "POST",
-                body,
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    email: formData.get("email")?.toString().trim() || "",
+                    password: formData.get("password")?.toString() || "",
+                }),
             });
 
             if (!response.ok) {
@@ -1021,29 +1032,296 @@ async function initProfilePage() {
     const container = document.getElementById("profile-content");
     if (!container) return;
 
-    container.textContent = "Загрузка профиля...";
+    const roleBadge = document.getElementById("profile-role");
+    const profileForm = document.getElementById("profile-form");
+    const passwordForm = document.getElementById("password-form");
+    const addressList = document.getElementById("addresses-list");
+    const addressMessage = document.getElementById("addresses-message");
+    const addressModal = document.getElementById("address-modal");
+    const addressForm = document.getElementById("address-form");
+    const addressFormMessage = document.getElementById("address-form-message");
+    const addAddressBtn = document.getElementById("address-add-btn");
+    const profileFormMessage = document.getElementById("profile-form-message");
+    const passwordFormMessage = document.getElementById("password-form-message");
 
-    try {
-        const me = await apiFetch("/auth/me");
+    if (!profileForm || !passwordForm || !addressForm || !addressList) return;
 
-        const role = me.is_admin ? "Администратор" : "Покупатель";
+    let profile = null;
+    let addresses = [];
+    let editingAddressId = null;
 
-        container.innerHTML = `
-            <div class="profile-card">
-                <p><strong>Email:</strong> ${me.email}</p>
-                <p><strong>Имя:</strong> ${me.full_name}</p>
-                <p><strong>Телефон:</strong> ${me.phone || "-"}</p>
-                <p><strong>Роль:</strong> ${role}</p>
-            </div>
-        `;
-    } catch (e) {
-        container.innerHTML = `<p class="message message_error">${e.message}</p>`;
-    }
+    const setMessage = (el, type, text) => {
+        if (!el) return;
+        el.textContent = text || "";
+        el.classList.remove("is-error", "is-success");
+        if (text) {
+            el.classList.add(type === "error" ? "is-error" : "is-success");
+        }
+    };
+
+    const closeAddressModal = () => {
+        if (!addressModal) return;
+        addressModal.classList.remove("is-open");
+        addressModal.setAttribute("aria-hidden", "true");
+        addressForm?.reset();
+        editingAddressId = null;
+        setMessage(addressFormMessage, "", "");
+        addressForm
+            ?.querySelectorAll("input")
+            .forEach((input) => input.classList.remove("input_error", "input_valid"));
+    };
+
+    const openAddressModal = (title) => {
+        if (!addressModal) return;
+        const titleEl = document.getElementById("address-modal-title");
+        if (titleEl) titleEl.textContent = title;
+        addressModal.classList.add("is-open");
+        addressModal.setAttribute("aria-hidden", "false");
+        addressModal.querySelector("input")?.focus();
+    };
+
+    const renderAddresses = () => {
+        if (!addressList) return;
+        addressList.innerHTML = "";
+
+        if (!addresses.length) {
+            addressList.innerHTML = "<p class=\"message\">Адреса не добавлены</p>";
+            return;
+        }
+
+        addresses.forEach((addr) => {
+            const card = document.createElement("div");
+            card.className = `address-card ${addr.is_default ? "address-card_default" : ""}`;
+            card.dataset.id = addr.address_id;
+            card.innerHTML = `
+                <div class="address-card__meta">
+                    <div><strong>${addr.city}</strong></div>
+                    <div>${addr.street}, ${addr.house}</div>
+                    <div>Индекс: ${addr.postal_code}</div>
+                    ${addr.is_default ? '<span class="badge">По умолчанию</span>' : ""}
+                </div>
+                <div class="address-card__actions">
+                    <button class="btn btn_secondary" type="button" data-action="edit">Редактировать</button>
+                    <button class="btn btn_secondary" type="button" data-action="default" ${
+                        addr.is_default ? "disabled" : ""
+                    }>Сделать по умолчанию</button>
+                    <button class="btn" type="button" data-action="delete">Удалить</button>
+                </div>
+            `;
+            addressList.appendChild(card);
+        });
+    };
+
+    const loadAddresses = async () => {
+        try {
+            addresses = await apiFetch("/users/me/addresses");
+            renderAddresses();
+            setMessage(addressMessage, "", "");
+        } catch (err) {
+            setMessage(addressMessage, "error", err.message || "Не удалось загрузить адреса");
+        }
+    };
+
+    const fillProfileForm = () => {
+        if (!profileForm || !profile) return;
+        profileForm.elements.full_name.value = profile.full_name || "";
+        profileForm.elements.email.value = profile.email || "";
+        profileForm.elements.phone.value = profile.phone || "";
+    };
+
+    const loadProfile = async () => {
+        try {
+            profile = await apiFetch("/users/me");
+            if (roleBadge) {
+                roleBadge.textContent = profile.is_admin ? "Администратор" : "Покупатель";
+            }
+            fillProfileForm();
+        } catch (err) {
+            setMessage(
+                profileFormMessage,
+                "error",
+                err.message || "Не удалось загрузить профиль"
+            );
+            return;
+        }
+
+        await loadAddresses();
+    };
+
+    setupFormValidation(
+        profileForm,
+        {
+            full_name: [validators.required("имя"), validators.minLength("Имя", 2)],
+            email: [validators.required("email"), validators.email],
+            phone: [validators.phone],
+        },
+        profileFormMessage,
+        async () => {
+            const fd = new FormData(profileForm);
+            const payload = {
+                full_name: fd.get("full_name")?.toString().trim() || "",
+                email: fd.get("email")?.toString().trim() || "",
+                phone: fd.get("phone")?.toString().trim() || null,
+            };
+
+            try {
+                profile = await apiFetch("/users/me", {
+                    method: "PUT",
+                    body: JSON.stringify(payload),
+                });
+                fillProfileForm();
+                setMessage(profileFormMessage, "success", "Данные сохранены");
+            } catch (err) {
+                setMessage(profileFormMessage, "error", err.message || "Не удалось сохранить профайл");
+                throw err;
+            }
+        }
+    );
+
+    const passwordRules = {
+        current_password: [validators.required("текущий пароль")],
+        new_password: [
+            validators.required("новый пароль"),
+            validators.passwordComplexity,
+            validators.minLength("Пароль", 8),
+        ],
+        confirm_password: [
+            validators.required("подтверждение"),
+            validators.matches(() => passwordForm.elements.new_password.value.trim(), "Пароли не совпадают"),
+        ],
+    };
+
+    setupFormValidation(passwordForm, passwordRules, passwordFormMessage, async () => {
+        const fd = new FormData(passwordForm);
+        const payload = {
+            current_password: fd.get("current_password")?.toString() || "",
+            new_password: fd.get("new_password")?.toString() || "",
+        };
+
+        try {
+            await apiFetch("/users/me/password", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+            setMessage(passwordFormMessage, "success", "Пароль обновлён");
+            passwordForm.reset();
+            passwordForm
+                .querySelectorAll("input")
+                .forEach((input) => input.classList.remove("input_error", "input_valid"));
+        } catch (err) {
+            setMessage(passwordFormMessage, "error", err.message || "Не удалось обновить пароль");
+            throw err;
+        }
+    });
+
+    const addressValidationRules = {
+        city: [validators.required("город"), validators.minLength("Город", 2)],
+        street: [validators.required("улицу"), validators.minLength("Улица", 2)],
+        house: [validators.required("дом"), validators.minLength("Дом", 1)],
+        postal_code: [validators.required("индекс"), validators.minLength("Индекс", 3)],
+    };
+
+    setupFormValidation(addressForm, addressValidationRules, addressFormMessage, async () => {
+        const fd = new FormData(addressForm);
+        const payload = {
+            city: fd.get("city")?.toString().trim() || "",
+            street: fd.get("street")?.toString().trim() || "",
+            house: fd.get("house")?.toString().trim() || "",
+            postal_code: fd.get("postal_code")?.toString().trim() || "",
+            is_default: Boolean(fd.get("is_default")),
+        };
+
+        const path = editingAddressId
+            ? `/users/me/addresses/${editingAddressId}`
+            : "/users/me/addresses";
+        const method = editingAddressId ? "PUT" : "POST";
+
+        try {
+            await apiFetch(path, {
+                method,
+                body: JSON.stringify(payload),
+            });
+            await loadAddresses();
+            closeAddressModal();
+        } catch (err) {
+            setMessage(addressFormMessage, "error", err.message || "Не удалось сохранить адрес");
+            throw err;
+        }
+    });
+
+    addAddressBtn?.addEventListener("click", () => {
+        editingAddressId = null;
+        addressForm?.reset();
+        openAddressModal("Новый адрес");
+    });
+
+    addressModal?.querySelectorAll("[data-close-modal]").forEach((btn) => {
+        btn.addEventListener("click", closeAddressModal);
+    });
+
+    addressList?.addEventListener("click", async (e) => {
+        const actionBtn = e.target.closest("button[data-action]");
+        if (!actionBtn) return;
+        const card = actionBtn.closest(".address-card");
+        const id = card?.dataset.id;
+        if (!id) return;
+
+        if (actionBtn.dataset.action === "delete") {
+            if (!confirm("Удалить адрес?")) return;
+            try {
+                await apiFetch(`/users/me/addresses/${id}`, { method: "DELETE" });
+                await loadAddresses();
+            } catch (err) {
+                setMessage(addressMessage, "error", err.message || "Не удалось удалить адрес");
+            }
+        }
+
+        if (actionBtn.dataset.action === "edit") {
+            const addr = addresses.find((a) => a.address_id === Number(id));
+            if (!addr) return;
+            editingAddressId = id;
+            addressForm.elements.city.value = addr.city;
+            addressForm.elements.street.value = addr.street;
+            addressForm.elements.house.value = addr.house;
+            addressForm.elements.postal_code.value = addr.postal_code;
+            addressForm.elements.is_default.checked = Boolean(addr.is_default);
+            addressForm
+                .querySelectorAll("input")
+                .forEach((input) => input.classList.remove("input_error", "input_valid"));
+            openAddressModal("Редактировать адрес");
+        }
+
+        if (actionBtn.dataset.action === "default") {
+            try {
+                await apiFetch(`/users/me/addresses/${id}`, {
+                    method: "PUT",
+                    body: JSON.stringify({ is_default: true }),
+                });
+                await loadAddresses();
+            } catch (err) {
+                setMessage(addressMessage, "error", err.message || "Не удалось обновить адрес по умолчанию");
+            }
+        }
+    });
+
+    await loadProfile();
 }
 
-
-
-
+async function readFileAsBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = reader.result;
+            if (typeof result === "string") {
+                resolve(result.split(",")[1] || "");
+            } else {
+                reject(new Error("Не удалось прочитать файл"));
+            }
+        };
+        reader.onerror = () => reject(new Error("Не удалось прочитать файл"));
+        reader.readAsDataURL(file);
+    });
+}
 
 // --- Админ-панель ---
 
@@ -1377,22 +1655,14 @@ function initAdminPage() {
                         return;
                     }
 
-                    const formData = new FormData();
-                    formData.append("file", coverInput.files[0]);
-
                     try {
-                        await fetch(`/api/admin/books/${bookId}/cover`, {
+                        const base64 = await readFileAsBase64(coverInput.files[0]);
+                        await apiFetch(`/admin/books/${bookId}/cover`, {
                             method: "POST",
-                            headers: {
-                                "Authorization": getToken() ? `Bearer ${getToken()}` : "",
-                            },
-                            body: formData,
-                        }).then(async (resp) => {
-                            if (!resp.ok) {
-                                const data = await resp.json().catch(() => ({}));
-                                throw new Error(data.detail || "Ошибка загрузки обложки");
-                            }
-                            return resp.json();
+                            body: JSON.stringify({
+                                filename: coverInput.files[0].name,
+                                content: base64,
+                            }),
                         });
 
                         msg.textContent = "Обложка обновлена";
@@ -1789,21 +2059,10 @@ function initAdminPage() {
 
             // 2. если выбрана обложка — сразу загружаем её
             if (coverFile && coverFile instanceof File && coverFile.size > 0) {
-                const formData = new FormData();
-                formData.append("file", coverFile);
-
-                await fetch(`/api/admin/books/${book.book_id}/cover`, {
+                const base64 = await readFileAsBase64(coverFile);
+                await apiFetch(`/admin/books/${book.book_id}/cover`, {
                     method: "POST",
-                    headers: {
-                        "Authorization": getToken() ? `Bearer ${getToken()}` : "",
-                    },
-                    body: formData,
-                }).then(async (resp) => {
-                    if (!resp.ok) {
-                        const data = await resp.json().catch(() => ({}));
-                        throw new Error(data.detail || "Ошибка загрузки обложки");
-                    }
-                    return resp.json();
+                    body: JSON.stringify({ filename: coverFile.name, content: base64 }),
                 });
             }
 

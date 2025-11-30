@@ -10,3 +10,8 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[EmailStr] = None
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
