@@ -247,12 +247,24 @@ async function initIndexPage() {
                     : `<div class="card__cover card__cover_placeholder">Нет обложки</div>`;
 
                 card.innerHTML = `
-                    ${cover}
-                    <div class="card__body">
-                        <h2>${b.title}</h2>
-                        <p>Цена: ${b.price} ₽</p>
-                        <p>Год: ${b.publication_year || "-"}</p>
-                        <a href="/books/${b.book_id}">Подробнее</a>
+                    <div class="card__top">
+                        ${cover}
+                        <div class="card__body">
+                            <div>
+                                <h2 class="card__title">${b.title}</h2>
+                                <div class="card__meta">
+                                    <span class="pill">Год: ${b.publication_year || "—"}</span>
+                                    <span class="pill pill_primary">${b.price} ₽</span>
+                                </div>
+                            </div>
+                            <p class="card__hint">Перейдите в карточку, чтобы прочитать описание и добавить книгу в корзину.</p>
+                        </div>
+                    </div>
+                    <div class="card__footer">
+                        <div class="card__price">${b.price} ₽</div>
+                        <div class="card__actions">
+                            <a class="btn btn_secondary" href="/books/${b.book_id}">Подробнее</a>
+                        </div>
                     </div>
                 `;
                 listEl.appendChild(card);
@@ -418,14 +430,16 @@ async function initCartPage() {
                 html += `
                     <tr data-item-id="${item.cart_item_id}">
                         <td>${title}</td>
-                        <td>${price ? price.toFixed(2) + " ₽" : "-"}</td>
+                        <td class="table__num">${price ? price.toFixed(2) + " ₽" : "-"}</td>
                         <td>
-                            <input type="number" value="${item.quantity}" min="1" class="qty-input">
+                            <span class="table__inline">
+                                <input type="number" value="${item.quantity}" min="1" class="qty-input">
+                            </span>
                         </td>
-                        <td>${lineTotal ? lineTotal.toFixed(2) + " ₽" : "-"}</td>
-                        <td>
-                            <button class="btn-update">Обновить</button>
-                            <button class="btn-delete">Удалить</button>
+                        <td class="table__num">${lineTotal ? lineTotal.toFixed(2) + " ₽" : "-"}</td>
+                        <td class="table__actions">
+                            <button class="btn btn_ghost btn_sm btn-update">Обновить</button>
+                            <button class="btn btn_danger btn_sm btn-delete">Удалить</button>
                         </td>
                     </tr>
                 `;
@@ -433,7 +447,7 @@ async function initCartPage() {
 
             html += `
                 <tr>
-                    <td colspan="5" style="text-align: right;">
+                    <td colspan="5" class="table__actions">
                         <strong>Итого: ${total.toFixed(2)} ₽</strong>
                     </td>
                 </tr>
@@ -813,7 +827,7 @@ function initAdminPage() {
                             </select>
                         </td>
                         <td>${o.created_at}</td>
-                        <td><button class="admin-order-save">Сохранить</button></td>
+                        <td class="table__actions"><button class="btn btn_ghost btn_sm admin-order-save">Сохранить</button></td>
                     </tr>
                 `;
             });
@@ -864,8 +878,8 @@ function initAdminPage() {
                         <td>${u.email}</td>
                         <td>${u.full_name}</td>
                         <td>${u.is_admin ? "Да" : "Нет"}</td>
-                        <td>
-                            <button class="admin-user-toggle">
+                        <td class="table__actions">
+                            <button class="btn btn_ghost btn_sm admin-user-toggle">
                                 ${u.is_admin ? "Снять админа" : "Сделать админом"}
                             </button>
                         </td>
