@@ -14,5 +14,12 @@ class PublisherRepository(BaseRepository[Publisher]):
     def get_by_id(self, publisher_id: int) -> Optional[Publisher]:
         return self.get(publisher_id)
 
+    def get_by_name(self, name: str) -> Optional[Publisher]:
+        return (
+            self.db.query(Publisher)
+            .filter(Publisher.name == name)
+            .first()
+        )
+
     def list_all(self) -> List[Publisher]:
         return self.list()

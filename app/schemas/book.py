@@ -2,7 +2,7 @@
 from decimal import Decimal
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict  # добавили ConfigDict
+from pydantic import BaseModel, ConfigDict, Field  # добавили ConfigDict
 
 
 class BookBase(BaseModel):
@@ -13,8 +13,11 @@ class BookBase(BaseModel):
     pages: Optional[int] = None
     isbn: Optional[str] = None
     genre_id: Optional[int] = None
+    genre_name: Optional[str] = None
     publisher_id: Optional[int] = None
-    author_ids: List[int] = []  # список id авторов
+    publisher_name: Optional[str] = None
+    author_ids: List[int] = Field(default_factory=list)  # список id авторов
+    author_names: List[str] = Field(default_factory=list)
     cover_image: Optional[str] = None  # URL/путь к обложке
 
 
@@ -30,8 +33,11 @@ class BookUpdate(BaseModel):
     pages: Optional[int] = None
     isbn: Optional[str] = None
     genre_id: Optional[int] = None
+    genre_name: Optional[str] = None
     publisher_id: Optional[int] = None
+    publisher_name: Optional[str] = None
     author_ids: Optional[List[int]] = None
+    author_names: Optional[List[str]] = None
     cover_image: Optional[str] = None  # на случай ручного обновления
 
 

@@ -38,6 +38,21 @@
                     Кол-во страниц
                     <input type="number" name="pages">
                 </label>
+                <label>
+                    Жанр
+                    <input type="text" name="genre_name" list="admin-genre-options" placeholder="Начните вводить жанр">
+                    <datalist id="admin-genre-options"></datalist>
+                </label>
+                <label>
+                    Авторы (через запятую)
+                    <input type="text" name="author_names" list="admin-author-options" placeholder="Например: Имя Автора, Другой Автор">
+                    <datalist id="admin-author-options"></datalist>
+                </label>
+                <label>
+                    Издательство
+                    <input type="text" name="publisher_name" list="admin-publisher-options" placeholder="Начните вводить издательство">
+                    <datalist id="admin-publisher-options"></datalist>
+                </label>
                 <!-- НОВОЕ ПОЛЕ -->
                 <label>
                     Обложка

@@ -2,7 +2,7 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models import User
+from app.models import Author, Book, Genre, Publisher, User
 from app.services.auth_service import create_access_token
 
 def get_admin_token(db: Session):
@@ -99,3 +99,63 @@ def test_books_filters_and_sorting(client: TestClient, db_session, create_user):
     # теперь первое и последнее — именно наши, без влияния других тестов
     assert books[0]["title"] == "Filt Expensive Book"
     assert books[-1]["title"] == "Filt Cheap Book"
+
+
+def test_admin_create_book_creates_missing_relations(
+    client: TestClient, db_session, create_user
+):
+    admin = create_user(
+        "adminrelations@example.com",
+        "adminpass",
+        is_admin=True,
+    )
+    token = create_access_token({"sub": admin.email})
+
+    payload = {
+        "title": "Book with relations",
+        "description": "",
+        "price": 750,
+        "publication_year": 2023,
+        "pages": 320,
+        "isbn": None,
+        "genre_id": None,
+        "publisher_id": None,
+        "author_ids": [],
+        "genre_name": "Test Genre X",
+        "publisher_name": "Test Publisher Y",
+        "author_names": ["Author One", "Author Two"],
+    }
+
+    resp = client.post(
+        "/api/books/",
+        json=payload,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 201
+    created = resp.json()
+
+    # убедились, что сущности создались в БД
+    genre = db_session.query(Genre).filter_by(name=payload["genre_name"]).first()
+    publisher = (
+        db_session.query(Publisher)
+        .filter_by(name=payload["publisher_name"])
+        .first()
+    )
+    authors = (
+        db_session.query(Author)
+        .filter(Author.full_name.in_(payload["author_names"]))
+        .all()
+    )
+    db_book = (
+        db_session.query(Book)
+        .filter(Book.book_id == created["book_id"])
+        .first()
+    )
+
+    assert genre is not None
+    assert publisher is not None
+    assert len(authors) == len(payload["author_names"])
+    assert db_book is not None
+    assert db_book.genre_id == genre.genre_id
+    assert db_book.publisher_id == publisher.publisher_id
+    assert {a.full_name for a in db_book.authors} == set(payload["author_names"])

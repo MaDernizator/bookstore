@@ -4,7 +4,12 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 
 from app.models import Book, Author
-from app.repositories import BookRepository
+from app.repositories import (
+    AuthorRepository,
+    BookRepository,
+    GenreRepository,
+    PublisherRepository,
+)
 from app.schemas.book import BookCreate, BookUpdate
 
 
@@ -46,15 +51,51 @@ def get_book(db: Session, book_id: int) -> Optional[Book]:
 
 def create_book(db: Session, book_in: BookCreate) -> Book:
     repo = BookRepository(db)
-    # сначала создаём книгу без авторов
-    data = book_in.model_dump(exclude={"author_ids"})
+    genre_repo = GenreRepository(db)
+    publisher_repo = PublisherRepository(db)
+    author_repo = AuthorRepository(db)
+
+    data = book_in.model_dump(
+        exclude={"author_ids", "author_names", "genre_name", "publisher_name"}
+    )
+
+    genre_id = book_in.genre_id
+    if genre_id is None and book_in.genre_name:
+        name = book_in.genre_name.strip()
+        if name:
+            genre = genre_repo.get_by_name(name)
+            if not genre:
+                genre = genre_repo.create({"name": name})
+            genre_id = genre.genre_id
+
+    publisher_id = book_in.publisher_id
+    if publisher_id is None and book_in.publisher_name:
+        name = book_in.publisher_name.strip()
+        if name:
+            publisher = publisher_repo.get_by_name(name)
+            if not publisher:
+                publisher = publisher_repo.create({"name": name})
+            publisher_id = publisher.publisher_id
+
+    author_ids = list(book_in.author_ids or [])
+    for name in book_in.author_names:
+        clean_name = name.strip()
+        if not clean_name:
+            continue
+        author = author_repo.get_by_name(clean_name)
+        if not author:
+            author = author_repo.create({"full_name": clean_name})
+        author_ids.append(author.author_id)
+
+    data["genre_id"] = genre_id
+    data["publisher_id"] = publisher_id
+
     book = repo.create_book(data)
 
-    # привязываем авторов, если есть
-    if book_in.author_ids:
+    if author_ids:
         authors = (
             db.query(Author)
-            .filter(Author.author_id.in_(book_in.author_ids))
+            .filter(Author.author_id.in_(author_ids))
             .all()
         )
         book.authors = authors
