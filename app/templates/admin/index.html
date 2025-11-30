@@ -11,6 +11,9 @@
             <button data-section="books">Книги</button>
             <button data-section="orders">Заказы</button>
             <button data-section="users">Пользователи</button>
+            <button data-section="genres">Жанры</button>
+            <button data-section="authors">Авторы</button>
+            <button data-section="publishers">Издательства</button>
         </nav>
 
         <section id="admin-section-books" class="admin-section">
@@ -54,6 +57,54 @@
         <section id="admin-section-users" class="admin-section" style="display:none;">
             <h2>Пользователи</h2>
             <div id="admin-users-list">Загрузка...</div>
+        </section>
+
+        <section id="admin-section-genres" class="admin-section" style="display:none;">
+            <h2>Жанры</h2>
+            <div id="admin-genres-list">Загрузка...</div>
+
+            <h3>Создать жанр</h3>
+            <form id="admin-genre-create-form" class="form">
+                <label>
+                    Название
+                    <input type="text" name="name" required>
+                </label>
+
+                <button type="submit">Создать</button>
+            </form>
+            <div id="admin-genre-create-msg" class="message"></div>
+        </section>
+
+        <section id="admin-section-authors" class="admin-section" style="display:none;">
+            <h2>Авторы</h2>
+            <div id="admin-authors-list">Загрузка...</div>
+
+            <h3>Создать автора</h3>
+            <form id="admin-author-create-form" class="form">
+                <label>
+                    Полное имя
+                    <input type="text" name="full_name" required>
+                </label>
+
+                <button type="submit">Создать</button>
+            </form>
+            <div id="admin-author-create-msg" class="message"></div>
+        </section>
+
+        <section id="admin-section-publishers" class="admin-section" style="display:none;">
+            <h2>Издательства</h2>
+            <div id="admin-publishers-list">Загрузка...</div>
+
+            <h3>Создать издательство</h3>
+            <form id="admin-publisher-create-form" class="form">
+                <label>
+                    Название
+                    <input type="text" name="name" required>
+                </label>
+
+                <button type="submit">Создать</button>
+            </form>
+            <div id="admin-publisher-create-msg" class="message"></div>
         </section>
     </div>
 </div>

@@ -1251,6 +1251,207 @@ function initAdminPage() {
         }
     }
 
+    async function loadGenres() {
+        const el = document.getElementById("admin-genres-list");
+        el.innerHTML = "Загрузка...";
+        try {
+            const genres = await apiFetch("/admin/genres");
+            if (!genres.length) {
+                el.innerHTML = "<p>Жанров нет</p>";
+                return;
+            }
+
+            let html = `<table class="table">
+                <thead>
+                    <tr><th>ID</th><th>Название</th><th></th></tr>
+                </thead>
+                <tbody>`;
+
+            genres.forEach((g) => {
+                html += `
+                    <tr data-genre-id="${g.genre_id}">
+                        <td>${g.genre_id}</td>
+                        <td><input type="text" value="${g.name}" class="input"></td>
+                        <td class="table__actions">
+                            <button class="btn btn_ghost btn_sm admin-genre-save">Сохранить</button>
+                            <button class="btn btn_danger btn_sm admin-genre-delete">Удалить</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += "</tbody></table>";
+            el.innerHTML = html;
+
+            el.querySelectorAll(".admin-genre-save").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const tr = e.target.closest("tr");
+                    const id = tr.getAttribute("data-genre-id");
+                    const nameInput = tr.querySelector("input");
+                    try {
+                        await apiFetch(`/admin/genres/${id}`, {
+                            method: "PATCH",
+                            body: JSON.stringify({ name: nameInput.value.trim() }),
+                        });
+                        await loadGenres();
+                    } catch (err) {
+                        alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+
+            el.querySelectorAll(".admin-genre-delete").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const tr = e.target.closest("tr");
+                    const id = tr.getAttribute("data-genre-id");
+                    if (!confirm(`Удалить жанр #${id}?`)) return;
+                    try {
+                        await apiFetch(`/admin/genres/${id}`, { method: "DELETE" });
+                        await loadGenres();
+                    } catch (err) {
+                        alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+        } catch (e) {
+            el.innerHTML = `<p class="message message_error">${e.message}</p>`;
+        }
+    }
+
+    async function loadAuthors() {
+        const el = document.getElementById("admin-authors-list");
+        el.innerHTML = "Загрузка...";
+        try {
+            const authors = await apiFetch("/admin/authors");
+            if (!authors.length) {
+                el.innerHTML = "<p>Авторов нет</p>";
+                return;
+            }
+
+            let html = `<table class="table">
+                <thead>
+                    <tr><th>ID</th><th>Полное имя</th><th></th></tr>
+                </thead>
+                <tbody>`;
+
+            authors.forEach((a) => {
+                html += `
+                    <tr data-author-id="${a.author_id}">
+                        <td>${a.author_id}</td>
+                        <td><input type="text" value="${a.full_name}" class="input"></td>
+                        <td class="table__actions">
+                            <button class="btn btn_ghost btn_sm admin-author-save">Сохранить</button>
+                            <button class="btn btn_danger btn_sm admin-author-delete">Удалить</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += "</tbody></table>";
+            el.innerHTML = html;
+
+            el.querySelectorAll(".admin-author-save").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const tr = e.target.closest("tr");
+                    const id = tr.getAttribute("data-author-id");
+                    const nameInput = tr.querySelector("input");
+                    try {
+                        await apiFetch(`/admin/authors/${id}`, {
+                            method: "PATCH",
+                            body: JSON.stringify({ full_name: nameInput.value.trim() }),
+                        });
+                        await loadAuthors();
+                    } catch (err) {
+                        alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+
+            el.querySelectorAll(".admin-author-delete").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const tr = e.target.closest("tr");
+                    const id = tr.getAttribute("data-author-id");
+                    if (!confirm(`Удалить автора #${id}?`)) return;
+                    try {
+                        await apiFetch(`/admin/authors/${id}`, { method: "DELETE" });
+                        await loadAuthors();
+                    } catch (err) {
+                        alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+        } catch (e) {
+            el.innerHTML = `<p class="message message_error">${e.message}</p>`;
+        }
+    }
+
+    async function loadPublishers() {
+        const el = document.getElementById("admin-publishers-list");
+        el.innerHTML = "Загрузка...";
+        try {
+            const publishers = await apiFetch("/admin/publishers");
+            if (!publishers.length) {
+                el.innerHTML = "<p>Издательств нет</p>";
+                return;
+            }
+
+            let html = `<table class="table">
+                <thead>
+                    <tr><th>ID</th><th>Название</th><th></th></tr>
+                </thead>
+                <tbody>`;
+
+            publishers.forEach((p) => {
+                html += `
+                    <tr data-publisher-id="${p.publisher_id}">
+                        <td>${p.publisher_id}</td>
+                        <td><input type="text" value="${p.name}" class="input"></td>
+                        <td class="table__actions">
+                            <button class="btn btn_ghost btn_sm admin-publisher-save">Сохранить</button>
+                            <button class="btn btn_danger btn_sm admin-publisher-delete">Удалить</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += "</tbody></table>";
+            el.innerHTML = html;
+
+            el.querySelectorAll(".admin-publisher-save").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const tr = e.target.closest("tr");
+                    const id = tr.getAttribute("data-publisher-id");
+                    const nameInput = tr.querySelector("input");
+                    try {
+                        await apiFetch(`/admin/publishers/${id}`, {
+                            method: "PATCH",
+                            body: JSON.stringify({ name: nameInput.value.trim() }),
+                        });
+                        await loadPublishers();
+                    } catch (err) {
+                        alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+
+            el.querySelectorAll(".admin-publisher-delete").forEach((btn) => {
+                btn.addEventListener("click", async (e) => {
+                    const tr = e.target.closest("tr");
+                    const id = tr.getAttribute("data-publisher-id");
+                    if (!confirm(`Удалить издательство #${id}?`)) return;
+                    try {
+                        await apiFetch(`/admin/publishers/${id}`, { method: "DELETE" });
+                        await loadPublishers();
+                    } catch (err) {
+                        alert("Ошибка: " + err.message);
+                    }
+                });
+            });
+        } catch (e) {
+            el.innerHTML = `<p class="message message_error">${e.message}</p>`;
+        }
+    }
+
     // Навигация по секциям
     root.querySelectorAll(".admin-nav button").forEach((btn) => {
         btn.addEventListener("click", (e) => {
@@ -1259,69 +1460,144 @@ function initAdminPage() {
             if (name === "books") loadBooks();
             if (name === "orders") loadOrders();
             if (name === "users") loadUsers();
+            if (name === "genres") loadGenres();
+            if (name === "authors") loadAuthors();
+            if (name === "publishers") loadPublishers();
         });
     });
 
     // Создание книги
-const createForm = document.getElementById("admin-book-create-form");
-const createMsg = document.getElementById("admin-book-create-msg");
-createForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    createMsg.textContent = "";
-    createMsg.classList.remove("message_error");
+    const createForm = document.getElementById("admin-book-create-form");
+    const createMsg = document.getElementById("admin-book-create-msg");
+    createForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        createMsg.textContent = "";
+        createMsg.classList.remove("message_error");
 
-    const fd = new FormData(createForm);
-    const coverFile = fd.get("cover");
+        const fd = new FormData(createForm);
+        const coverFile = fd.get("cover");
 
-    const payload = {
-        title: fd.get("title"),
-        price: Number(fd.get("price")),
-        publication_year: fd.get("publication_year")
-            ? Number(fd.get("publication_year"))
-            : null,
-        pages: fd.get("pages") ? Number(fd.get("pages")) : null,
-        description: null,
-        isbn: null,
-        genre_id: null,
-        publisher_id: null,
-        author_ids: [],
-    };
+        const payload = {
+            title: fd.get("title"),
+            price: Number(fd.get("price")),
+            publication_year: fd.get("publication_year")
+                ? Number(fd.get("publication_year"))
+                : null,
+            pages: fd.get("pages") ? Number(fd.get("pages")) : null,
+            description: null,
+            isbn: null,
+            genre_id: null,
+            publisher_id: null,
+            author_ids: [],
+        };
 
-    try {
-        // 1. создаём книгу
-        const book = await apiFetch("/books", {
-            method: "POST",
-            body: JSON.stringify(payload),
-        });
-
-        // 2. если выбрана обложка — сразу загружаем её
-        if (coverFile && coverFile instanceof File && coverFile.size > 0) {
-            const formData = new FormData();
-            formData.append("file", coverFile);
-
-            await fetch(`/api/admin/books/${book.book_id}/cover`, {
+        try {
+            // 1. создаём книгу
+            const book = await apiFetch("/books", {
                 method: "POST",
-                headers: {
-                    "Authorization": getToken() ? `Bearer ${getToken()}` : "",
-                },
-                body: formData,
-            }).then(async (resp) => {
-                if (!resp.ok) {
-                    const data = await resp.json().catch(() => ({}));
-                    throw new Error(data.detail || "Ошибка загрузки обложки");
-                }
-                return resp.json();
+                body: JSON.stringify(payload),
             });
-        }
 
-        createMsg.textContent = "Книга создана";
-        createForm.reset();
-        await loadBooks();
-    } catch (err) {
-        createMsg.textContent = err.message;
-        createMsg.classList.add("message_error");
-    }
-});
+            // 2. если выбрана обложка — сразу загружаем её
+            if (coverFile && coverFile instanceof File && coverFile.size > 0) {
+                const formData = new FormData();
+                formData.append("file", coverFile);
+
+                await fetch(`/api/admin/books/${book.book_id}/cover`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": getToken() ? `Bearer ${getToken()}` : "",
+                    },
+                    body: formData,
+                }).then(async (resp) => {
+                    if (!resp.ok) {
+                        const data = await resp.json().catch(() => ({}));
+                        throw new Error(data.detail || "Ошибка загрузки обложки");
+                    }
+                    return resp.json();
+                });
+            }
+
+            createMsg.textContent = "Книга создана";
+            createForm.reset();
+            await loadBooks();
+        } catch (err) {
+            createMsg.textContent = err.message;
+            createMsg.classList.add("message_error");
+        }
+    });
+
+    // Создание жанра
+    const genreCreateForm = document.getElementById("admin-genre-create-form");
+    const genreCreateMsg = document.getElementById("admin-genre-create-msg");
+    genreCreateForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        genreCreateMsg.textContent = "";
+        genreCreateMsg.classList.remove("message_error");
+
+        const fd = new FormData(genreCreateForm);
+
+        try {
+            await apiFetch("/admin/genres", {
+                method: "POST",
+                body: JSON.stringify({ name: fd.get("name")?.toString().trim() || "" }),
+            });
+            genreCreateMsg.textContent = "Жанр создан";
+            genreCreateForm.reset();
+            await loadGenres();
+        } catch (err) {
+            genreCreateMsg.textContent = err.message;
+            genreCreateMsg.classList.add("message_error");
+        }
+    });
+
+    // Создание автора
+    const authorCreateForm = document.getElementById("admin-author-create-form");
+    const authorCreateMsg = document.getElementById("admin-author-create-msg");
+    authorCreateForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        authorCreateMsg.textContent = "";
+        authorCreateMsg.classList.remove("message_error");
+
+        const fd = new FormData(authorCreateForm);
+
+        try {
+            await apiFetch("/admin/authors", {
+                method: "POST",
+                body: JSON.stringify({ full_name: fd.get("full_name")?.toString().trim() || "" }),
+            });
+            authorCreateMsg.textContent = "Автор создан";
+            authorCreateForm.reset();
+            await loadAuthors();
+        } catch (err) {
+            authorCreateMsg.textContent = err.message;
+            authorCreateMsg.classList.add("message_error");
+        }
+    });
+
+    // Создание издательства
+    const publisherCreateForm = document.getElementById("admin-publisher-create-form");
+    const publisherCreateMsg = document.getElementById("admin-publisher-create-msg");
+    publisherCreateForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        publisherCreateMsg.textContent = "";
+        publisherCreateMsg.classList.remove("message_error");
+
+        const fd = new FormData(publisherCreateForm);
+
+        try {
+            await apiFetch("/admin/publishers", {
+                method: "POST",
+                body: JSON.stringify({ name: fd.get("name")?.toString().trim() || "" }),
+            });
+            publisherCreateMsg.textContent = "Издательство создано";
+            publisherCreateForm.reset();
+            await loadPublishers();
+        } catch (err) {
+            publisherCreateMsg.textContent = err.message;
+            publisherCreateMsg.classList.add("message_error");
+        }
+    });
 
     (async () => {
         const ok = await ensureAdmin();
