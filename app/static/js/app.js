@@ -91,6 +91,25 @@ function updateNavAuthState() {
     });
 }
 
+function renderCardSkeletons(count = 6) {
+    const items = Array.from({ length: count })
+        .map(() => {
+            return `
+            <div class="card_skeleton">
+                <div class="skeleton skeleton__cover"></div>
+                <div class="skeleton__lines">
+                    <div class="skeleton skeleton__line wide"></div>
+                    <div class="skeleton skeleton__line mid"></div>
+                    <div class="skeleton skeleton__line mid"></div>
+                    <div class="skeleton skeleton__line short"></div>
+                </div>
+            </div>`;
+        })
+        .join("");
+
+    return `<div class="cards_skeletons">${items}</div>`;
+}
+
 function initHeaderSearch() {
     const searchForms = document.querySelectorAll(".js-header-search");
     if (!searchForms.length) return;
@@ -327,7 +346,7 @@ async function initIndexPage() {
 
     async function loadBooks() {
         hideEmptyState();
-        listEl.innerHTML = '<p class="cards__loading">Загрузка...</p>';
+        listEl.innerHTML = renderCardSkeletons();
 
         const params = new URLSearchParams();
 
@@ -718,25 +737,101 @@ async function initCartPage() {
 
 // --- Страница логина ---
 
+const validators = {
+    required: (label) => (value) => (!value ? `Укажите ${label}` : ""),
+    email: (value) => {
+        if (!value) return "";
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailPattern.test(value) ? "" : "Введите корректный email";
+    },
+    minLength: (label, length) => (value) =>
+        value && value.length < length ? `${label} не короче ${length} символов` : "",
+    phone: (value) => {
+        if (!value) return "";
+        return /^[\d\s()+-]{7,}$/.test(value)
+            ? ""
+            : "Телефон может содержать только цифры, скобки и дефисы";
+    },
+};
+
+function setupFormValidation(form, rules, errorBox, handleSubmit) {
+    const setFieldState = (input, error) => {
+        const errorEl = form.querySelector(`[data-error-for="${input.name}"]`);
+        input.classList.remove("input_error", "input_valid");
+        if (error) {
+            input.classList.add("input_error");
+            if (errorEl) errorEl.textContent = error;
+        } else {
+            if (errorEl) errorEl.textContent = "";
+            if (input.value.trim()) input.classList.add("input_valid");
+        }
+    };
+
+    const validateField = (name) => {
+        const input = form.elements[name];
+        if (!input) return true;
+        const checks = rules[name] || [];
+        let error = "";
+        for (const check of checks) {
+            error = check(input.value.trim());
+            if (error) break;
+        }
+        setFieldState(input, error);
+        return !error;
+    };
+
+    Object.keys(rules).forEach((name) => {
+        const input = form.elements[name];
+        input?.addEventListener("input", () => validateField(name));
+        input?.addEventListener("blur", () => validateField(name));
+    });
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (errorBox) {
+            errorBox.textContent = "";
+            errorBox.classList.remove("is-error");
+        }
+
+        const isValid = Object.keys(rules).every((name) => validateField(name));
+        if (!isValid) {
+            if (errorBox) {
+                errorBox.textContent = "Проверьте подсвеченные поля и исправьте ошибки.";
+                errorBox.classList.add("is-error");
+            }
+            return;
+        }
+
+        try {
+            await handleSubmit();
+        } catch (err) {
+            if (errorBox) {
+                errorBox.textContent = err.message || "Произошла ошибка";
+                errorBox.classList.add("is-error");
+            }
+        }
+    });
+}
+
 function initLoginPage() {
     const form = document.getElementById("login-form");
     if (!form) return;
 
     const errorEl = document.getElementById("login-error");
 
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        errorEl.textContent = "";
+    setupFormValidation(
+        form,
+        {
+            email: [validators.required("email"), validators.email],
+            password: [validators.required("пароль"), validators.minLength("Пароль", 6)],
+        },
+        errorEl,
+        async () => {
+            const formData = new FormData(form);
+            const body = new URLSearchParams();
+            body.append("username", formData.get("email"));
+            body.append("password", formData.get("password"));
 
-        const formData = new FormData(form);
-        const email = formData.get("email");
-        const password = formData.get("password");
-
-        const body = new URLSearchParams();
-        body.append("username", email);
-        body.append("password", password);
-
-        try {
             const response = await fetch(API_BASE + "/auth/login", {
                 method: "POST",
                 body,
@@ -744,16 +839,14 @@ function initLoginPage() {
 
             if (!response.ok) {
                 const data = await response.json().catch(() => ({}));
-                throw new Error(data.detail || "Ошибка входа");
+                throw new Error(data.detail || "Не удалось войти. Попробуйте еще раз.");
             }
 
             const data = await response.json();
             setToken(data.access_token);
             window.location.href = "/";
-        } catch (e) {
-            errorEl.textContent = e.message;
         }
-    });
+    );
 }
 
 // --- Страница регистрации ---
@@ -764,28 +857,31 @@ function initRegisterPage() {
 
     const errorEl = document.getElementById("register-error");
 
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        errorEl.textContent = "";
+    setupFormValidation(
+        form,
+        {
+            email: [validators.required("email"), validators.email],
+            full_name: [validators.required("имя"), validators.minLength("Имя", 2)],
+            phone: [validators.phone],
+            password: [validators.required("пароль"), validators.minLength("Пароль", 6)],
+        },
+        errorEl,
+        async () => {
+            const formData = new FormData(form);
+            const payload = {
+                email: formData.get("email"),
+                full_name: formData.get("full_name"),
+                phone: formData.get("phone"),
+                password: formData.get("password"),
+            };
 
-        const formData = new FormData(form);
-        const payload = {
-            email: formData.get("email"),
-            full_name: formData.get("full_name"),
-            phone: formData.get("phone"),
-            password: formData.get("password"),
-        };
-
-        try {
             await apiFetch("/auth/register", {
                 method: "POST",
                 body: JSON.stringify(payload),
             });
             window.location.href = "/login";
-        } catch (e) {
-            errorEl.textContent = e.message;
         }
-    });
+    );
 }
 
 // --- Страница "Мои заказы" ---
@@ -794,12 +890,22 @@ async function initOrdersPage() {
     const container = document.getElementById("orders-content");
     if (!container) return;
 
-    container.textContent = "Загрузка заказов...";
+    const renderEmptyState = () => {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3 class="empty-state__title">Заказов пока нет</h3>
+                <p class="empty-state__desc">Перейдите в каталог, выберите понравившиеся книги и оформите первый заказ.</p>
+                <a class="btn btn_primary" href="/">В каталог</a>
+            </div>
+        `;
+    };
+
+    container.innerHTML = '<div class="skeleton skeleton_table"></div>';
 
     try {
         const orders = await apiFetch("/orders");
         if (!orders.length) {
-            container.innerHTML = "<p>У вас пока нет заказов</p>";
+            renderEmptyState();
             return;
         }
 

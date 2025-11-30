@@ -1,19 +1,30 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Вход</h1>
+<div class="auth-card">
+    <div class="auth-card__header">
+        <p class="eyebrow">Добро пожаловать назад</p>
+        <h1>Вход в аккаунт</h1>
+        <p class="text-muted">Введите email и пароль, чтобы перейти к покупкам.</p>
+    </div>
 
-<form id="login-form" class="form">
-    <label>
-        Email
-        <input type="email" name="email" required>
-    </label>
-    <label>
-        Пароль
-        <input type="password" name="password" required>
-    </label>
-    <button type="submit">Войти</button>
-</form>
-
-<div id="login-error" class="message message_error"></div>
+    <form id="login-form" class="form" novalidate>
+        <div class="form__field">
+            <label for="login-email" class="form__label">Email</label>
+            <input id="login-email" type="email" name="email" class="input" autocomplete="email" required>
+            <p class="form__hint">Мы не рассылаем спам и не передаем почту третьим лицам.</p>
+            <p class="form__error" data-error-for="email"></p>
+        </div>
+        <div class="form__field">
+            <label for="login-password" class="form__label">Пароль</label>
+            <input id="login-password" type="password" name="password" class="input" autocomplete="current-password" required>
+            <p class="form__hint">Минимум 6 символов, учитывается регистр.</p>
+            <p class="form__error" data-error-for="password"></p>
+        </div>
+        <div class="form__actions">
+            <button type="submit" class="btn btn_primary btn_full">Войти</button>
+        </div>
+        <div id="login-error" class="form__message" role="alert"></div>
+    </form>
+</div>
 {% endblock %}

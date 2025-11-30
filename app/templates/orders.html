@@ -1,8 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Мои заказы</h1>
-<div id="orders-content">
-    Загрузка заказов...
+<div class="page-heading">
+    <div>
+        <p class="eyebrow">Вся история покупок</p>
+        <h1>Мои заказы</h1>
+        <p class="text-muted">Следите за статусом заказов и возвращайтесь к любимым книгам.</p>
+    </div>
+    <a class="btn btn_secondary" href="/">Вернуться в каталог</a>
+</div>
+<div id="orders-content" class="panel">
+    <div class="skeleton skeleton_table"></div>
 </div>
 {% endblock %}
