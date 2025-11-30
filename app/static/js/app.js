@@ -78,6 +78,8 @@ function updateNavAuthState() {
 
 // --- Страница каталога ---
 
+// --- Страница каталога ---
+
 async function initIndexPage() {
     const listEl = document.getElementById("books-list");
     if (!listEl) return;
@@ -93,6 +95,21 @@ async function initIndexPage() {
     const minYearInput = document.getElementById("filter-min-year");
     const maxYearInput = document.getElementById("filter-max-year");
     const orderSelect = document.getElementById("filter-order");
+
+    const pagePrev = document.getElementById("page-prev");
+    const pageNext = document.getElementById("page-next");
+    const pageInfo = document.getElementById("page-info");
+
+    const PAGE_SIZE = 10;
+    let currentPage = 1;
+    let hasMore = false;
+
+    function updatePagination() {
+        if (!pagePrev || !pageNext || !pageInfo) return;
+        pagePrev.disabled = currentPage <= 1;
+        pageNext.disabled = !hasMore;
+        pageInfo.textContent = `Страница ${currentPage}`;
+    }
 
     async function loadFilters() {
         try {
@@ -138,9 +155,16 @@ async function initIndexPage() {
 
         if (orderSelect.value) params.append("order_by", orderSelect.value);
 
+        // пагинация
+        params.append("skip", (currentPage - 1) * PAGE_SIZE);
+        params.append("limit", PAGE_SIZE);
+
         try {
             const query = params.toString();
             const books = await apiFetch(`/books${query ? "?" + query : ""}`);
+
+            hasMore = books.length === PAGE_SIZE;
+            updatePagination();
 
             if (!books.length) {
                 listEl.innerHTML = "<p>Книг не найдено</p>";
@@ -172,10 +196,13 @@ async function initIndexPage() {
         }
     }
 
+    // поиск
     searchBtn.addEventListener("click", () => {
+        currentPage = 1;
         loadBooks();
     });
 
+    // сброс
     resetBtn.addEventListener("click", () => {
         searchInput.value = "";
         genreSelect.value = "";
@@ -185,6 +212,7 @@ async function initIndexPage() {
         minYearInput.value = "";
         maxYearInput.value = "";
         orderSelect.value = "";
+        currentPage = 1;
         loadBooks();
     });
 
@@ -192,9 +220,29 @@ async function initIndexPage() {
     searchInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
             e.preventDefault();
+            currentPage = 1;
             loadBooks();
         }
     });
+
+    // кнопки пагинации
+    if (pagePrev) {
+        pagePrev.addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage -= 1;
+                loadBooks();
+            }
+        });
+    }
+
+    if (pageNext) {
+        pageNext.addEventListener("click", () => {
+            if (hasMore) {
+                currentPage += 1;
+                loadBooks();
+            }
+        });
+    }
 
     await loadFilters();
     await loadBooks();
@@ -252,6 +300,8 @@ async function initBookDetailPage() {
 
 // --- Страница корзины ---
 
+// --- Страница корзины ---
+
 async function initCartPage() {
     const cartEl = document.getElementById("cart-content");
     if (!cartEl) return;
@@ -262,27 +312,51 @@ async function initCartPage() {
     async function loadCart() {
         cartEl.innerHTML = "Загрузка...";
         msgEl.textContent = "";
+        msgEl.classList.remove("message_error");
+
         try {
             const cart = await apiFetch("/cart");
             if (!cart.items.length) {
                 cartEl.innerHTML = "<p>Корзина пуста</p>";
+                if (orderBtn) orderBtn.disabled = true;
                 return;
             }
 
+            let total = 0;
+
             let html = `<table class="table">
                 <thead>
-                    <tr><th>Книга</th><th>Кол-во</th><th></th></tr>
+                    <tr>
+                        <th>Книга</th>
+                        <th>Цена</th>
+                        <th>Кол-во</th>
+                        <th>Сумма</th>
+                        <th></th>
+                    </tr>
                 </thead>
                 <tbody>
             `;
 
             cart.items.forEach((item) => {
+                const title =
+                    item.book && item.book.title
+                        ? item.book.title
+                        : `#${item.book_id}`;
+                const price =
+                    item.book && item.book.price
+                        ? Number(item.book.price)
+                        : 0;
+                const lineTotal = price * item.quantity;
+                total += lineTotal;
+
                 html += `
                     <tr data-item-id="${item.cart_item_id}">
-                        <td>#${item.book_id}</td>
+                        <td>${title}</td>
+                        <td>${price ? price.toFixed(2) + " ₽" : "-"}</td>
                         <td>
                             <input type="number" value="${item.quantity}" min="1" class="qty-input">
                         </td>
+                        <td>${lineTotal ? lineTotal.toFixed(2) + " ₽" : "-"}</td>
                         <td>
                             <button class="btn-update">Обновить</button>
                             <button class="btn-delete">Удалить</button>
@@ -291,9 +365,19 @@ async function initCartPage() {
                 `;
             });
 
+            html += `
+                <tr>
+                    <td colspan="5" style="text-align: right;">
+                        <strong>Итого: ${total.toFixed(2)} ₽</strong>
+                    </td>
+                </tr>
+            `;
+
             html += "</tbody></table>";
             cartEl.innerHTML = html;
+            if (orderBtn) orderBtn.disabled = false;
 
+            // обработчик "Обновить"
             cartEl.querySelectorAll(".btn-update").forEach((btn) => {
                 btn.addEventListener("click", async (e) => {
                     const tr = e.target.closest("tr");
@@ -312,6 +396,7 @@ async function initCartPage() {
                 });
             });
 
+            // обработчик "Удалить"
             cartEl.querySelectorAll(".btn-delete").forEach((btn) => {
                 btn.addEventListener("click", async (e) => {
                     const tr = e.target.closest("tr");
@@ -328,23 +413,28 @@ async function initCartPage() {
             });
         } catch (e) {
             cartEl.innerHTML = `<p class="message message_error">${e.message}</p>`;
+            if (orderBtn) orderBtn.disabled = true;
         }
     }
 
-    orderBtn.addEventListener("click", async () => {
-        msgEl.textContent = "";
-        try {
-            const order = await apiFetch("/orders", { method: "POST" });
-            msgEl.textContent = `Заказ #${order.order_id} успешно оформлен на сумму ${order.total_amount} ₽`;
-            await loadCart();
-        } catch (e) {
-            msgEl.textContent = "Ошибка оформления заказа: " + e.message;
-            msgEl.classList.add("message_error");
-        }
-    });
+    if (orderBtn) {
+        orderBtn.addEventListener("click", async () => {
+            msgEl.textContent = "";
+            msgEl.classList.remove("message_error");
+            try {
+                const order = await apiFetch("/orders", { method: "POST" });
+                msgEl.textContent = `Заказ #${order.order_id} успешно оформлен на сумму ${order.total_amount} ₽`;
+                await loadCart();
+            } catch (e) {
+                msgEl.textContent = "Ошибка оформления заказа: " + e.message;
+                msgEl.classList.add("message_error");
+            }
+        });
+    }
 
     await loadCart();
 }
+
 
 // --- Страница логина ---
 

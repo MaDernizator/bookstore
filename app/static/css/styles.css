@@ -155,7 +155,6 @@ body {
     margin: 4px 0;
 }
 
-/* Таблица заказов выглядит аккуратно */
 .table {
     width: 100%;
     border-collapse: collapse;
@@ -173,12 +172,41 @@ body {
     background: #f5f5f5;
 }
 
-
-
 .qty-input {
     width: 60px;
 }
 
+.message {
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.message_error {
+    color: #b91c1c;
+}
+
+
 button {
     cursor: pointer;
+}
+
+.pagination {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pagination button {
+    padding: 4px 8px;
+    font-size: 14px;
+}
+
+.pagination button[disabled] {
+    opacity: 0.5;
+    cursor: default;
+}
+
+#page-info {
+    font-size: 14px;
 }
