@@ -1,27 +1,42 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Регистрация</h1>
+<div class="auth-card">
+    <div class="auth-card__header">
+        <p class="eyebrow">Присоединяйтесь к нам</p>
+        <h1>Регистрация</h1>
+        <p class="text-muted">Создайте аккаунт, чтобы отслеживать заказы и сохранять любимые книги.</p>
+    </div>
 
-<form id="register-form" class="form">
-    <label>
-        Email
-        <input type="email" name="email" required>
-    </label>
-    <label>
-        Полное имя
-        <input type="text" name="full_name" required>
-    </label>
-    <label>
-        Телефон
-        <input type="text" name="phone">
-    </label>
-    <label>
-        Пароль
-        <input type="password" name="password" required>
-    </label>
-    <button type="submit">Зарегистрироваться</button>
-</form>
-
-<div id="register-error" class="message message_error"></div>
+    <form id="register-form" class="form" novalidate>
+        <div class="form__field">
+            <label for="reg-email" class="form__label">Email</label>
+            <input id="reg-email" type="email" name="email" class="input" autocomplete="email" required>
+            <p class="form__hint">Используйте рабочий адрес — он понадобится для восстановления доступа.</p>
+            <p class="form__error" data-error-for="email"></p>
+        </div>
+        <div class="form__field">
+            <label for="reg-full-name" class="form__label">Полное имя</label>
+            <input id="reg-full-name" type="text" name="full_name" class="input" autocomplete="name" required>
+            <p class="form__hint">Отображается в профиле и сопроводительных письмах.</p>
+            <p class="form__error" data-error-for="full_name"></p>
+        </div>
+        <div class="form__field">
+            <label for="reg-phone" class="form__label">Телефон</label>
+            <input id="reg-phone" type="tel" name="phone" class="input" autocomplete="tel">
+            <p class="form__hint">Только цифры, скобки и дефисы. Необязательное поле.</p>
+            <p class="form__error" data-error-for="phone"></p>
+        </div>
+        <div class="form__field">
+            <label for="reg-password" class="form__label">Пароль</label>
+            <input id="reg-password" type="password" name="password" class="input" autocomplete="new-password" required>
+            <p class="form__hint">Минимум 6 символов. Добавьте цифры и символы для надежности.</p>
+            <p class="form__error" data-error-for="password"></p>
+        </div>
+        <div class="form__actions">
+            <button type="submit" class="btn btn_primary btn_full">Зарегистрироваться</button>
+        </div>
+        <div id="register-error" class="form__message" role="alert"></div>
+    </form>
+</div>
 {% endblock %}
