@@ -8,3 +8,4 @@ python-jose[cryptography]
 jinja2
 pytest
 httpx
+email-validator
