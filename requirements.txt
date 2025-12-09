@@ -10,3 +10,4 @@ pytest
 httpx
 email-validator
 python-multipart
+psycopg2-binary
