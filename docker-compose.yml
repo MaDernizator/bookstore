@@ -7,7 +7,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+psycopg2://bookstore:bookstore@db:5432/bookstore
+      - DATABASE_URL=postgresql://bookstore_y1nr_user:cqUakzIJB0IA4xbYUYLjSJ2fEGHKqHs8@dpg-d4s8hpngi27c73c4261g-a/bookstore_y1nr
       - SECRET_KEY=${SECRET_KEY:-change_me}
     depends_on:
       - db
