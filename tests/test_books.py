@@ -212,7 +212,8 @@ def test_admin_update_book_all_fields(client: TestClient, db_session, create_use
     assert updated["pages"] == update_payload["pages"]
     assert updated["isbn"] == update_payload["isbn"]
 
-    db_book = db_session.query(Book).get(book_id)
+    db_book = db_session.get(Book, book_id)
+
     assert db_book is not None
     assert db_book.genre is not None and db_book.genre.name == update_payload["genre_name"]
     assert db_book.publisher is not None and db_book.publisher.name == update_payload["publisher_name"]
