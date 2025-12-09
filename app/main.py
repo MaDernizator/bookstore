@@ -7,13 +7,39 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .api.router import api_router
-from .database import engine
+from .database import SessionLocal, engine
 from .models import Base
+from .repositories import UserRepository
+from .services.auth_service import get_password_hash
 
 app = FastAPI(title="Bookstore")
 
 # Ensure all database tables exist (create missing tables such as new Address)
 Base.metadata.create_all(bind=engine)
+
+
+def _create_default_admin() -> None:
+    """Create the default admin user if it doesn't exist."""
+
+    db = SessionLocal()
+    try:
+        repo = UserRepository(db)
+        admin = repo.get_by_email("admin@example.com")
+        if not admin:
+            repo.create(
+                {
+                    "email": "admin@example.com",
+                    "password_hash": get_password_hash("123456"),
+                    "full_name": "Admin",
+                    "phone": None,
+                    "is_admin": True,
+                }
+            )
+    finally:
+        db.close()
+
+
+_create_default_admin()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
